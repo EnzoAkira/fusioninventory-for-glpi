@@ -166,9 +166,9 @@ class PluginFusioninventoryDeployCommon extends PluginFusioninventoryCommunicati
                         break;
                      }
                      $query = "SELECT items_id
-                     FROM glpi_plugin_fusioninventory_deploygroups_staticdatas
-                     WHERE groups_id = '$items_id'
-                     AND itemtype = 'Computer'";
+                FROM glpi_plugin_fusioninventory_deploygroups_staticdatas
+                WHERE groups_id = '$items_id'
+                AND itemtype = 'Computer'";
                      $res = $DB->query($query);
                      while ($row = $DB->fetch_assoc($res)) {
                         $computers[] = $row['items_id'];

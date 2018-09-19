@@ -423,7 +423,7 @@ Effect.Move = Class.create(Effect.Base, {
       this.element.makePositioned();
       this.originalLeft = parseFloat(this.element.getStyle('left') || '0');
       this.originalTop  = parseFloat(this.element.getStyle('top')  || '0');
-      if (this.options.mode == 'absolute') {
+      if (this.options.mode === 'absolute') {
          this.options.x = this.options.x - this.originalLeft;
          this.options.y = this.options.y - this.originalTop;
       }
@@ -482,7 +482,7 @@ Effect.Scale = Class.create(Effect.Base, {
       this.factor = (this.options.scaleTo - this.options.scaleFrom)/100;
 
       this.dims = null;
-      if (this.options.scaleMode=='box') {
+      if (this.options.scaleMode === 'box') {
          this.dims = [this.element.offsetHeight, this.element.offsetWidth];
       }
       if (/^content/.test(this.options.scaleMode)) {
@@ -516,7 +516,7 @@ Effect.Scale = Class.create(Effect.Base, {
       if (this.options.scaleFromCenter) {
          var topd  = (height - this.dims[0])/2;
          var leftd = (width  - this.dims[1])/2;
-         if (this.elementPositioning == 'absolute') {
+         if (this.elementPositioning === 'absolute') {
             if (this.options.scaleY) {
                d.top = this.originalTop-topd + 'px';
             }
@@ -547,7 +547,7 @@ Effect.Highlight = Class.create(Effect.Base, {
    },
    setup: function() {
       // Prevent executing on elements not in the layout flow
-      if (this.element.getStyle('display')=='none') {
+      if (this.element.getStyle('display') === 'none') {
          this.cancel(); return; }
       // Disable background image during the effect
       this.oldStyle = { };
@@ -602,7 +602,7 @@ Effect.Fade = function(element) {
       from: element.getOpacity() || 1.0,
       to:   0.0,
       afterFinishInternal: function(effect) {
-         if (effect.options.to!=0) {
+         if (effect.options.to !== 0) {
             return;
          }
          effect.element.hide().setStyle({opacity: oldOpacity});
@@ -614,7 +614,7 @@ Effect.Fade = function(element) {
 Effect.Appear = function(element) {
    element = $(element);
    var options = Object.extend({
-      from: (element.getStyle('display') == 'none' ? 0.0 : element.getOpacity() || 0.0),
+      from: (element.getStyle('display') === 'none' ? 0.0 : element.getOpacity() || 0.0),
       to:   1.0,
       // force Safari to render floated elements properly
       afterFinishInternal: function(effect) {
@@ -1010,7 +1010,7 @@ Effect.Morph = Class.create(Effect.Base, {
             this.element.removeClassName(options.style);
             var css = this.element.getStyles();
             this.style = this.style.reject(function(style) {
-               return style.value == css[style.key];
+               return style.value === css[style.key];
             });
             options.afterFinishInternal = function(effect) {
                  effect.element.addClassName(effect.options.style);
@@ -1036,10 +1036,10 @@ Effect.Morph = Class.create(Effect.Base, {
       this.transforms = this.style.map(function(pair){
          var property = pair[0], value = pair[1], unit = null;
 
-         if (value.parseColor('#zzzzzz') != '#zzzzzz') {
+         if (value.parseColor('#zzzzzz') !== '#zzzzzz') {
             value = value.parseColor();
             unit  = 'color';
-         } else if (property == 'opacity') {
+         } else if (property === 'opacity') {
             value = parseFloat(value);
             if (Prototype.Browser.IE && (!this.element.currentStyle.hasLayout)) {
                this.element.setStyle({zoom: 1});
@@ -1047,21 +1047,21 @@ Effect.Morph = Class.create(Effect.Base, {
          } else if (Element.CSS_LENGTH.test(value)) {
              var components = value.match(/^([\+\-]?[0-9\.]+)(.*)$/);
              value = parseFloat(components[1]);
-             unit = (components.length == 3) ? components[2] : null;
+             unit = (components.length === 3) ? components[2] : null;
          }
 
          var originalValue = this.element.getStyle(property);
          return {
             style: property.camelize(),
-            originalValue: unit=='color' ? parseColor(originalValue) : parseFloat(originalValue || 0),
-            targetValue: unit=='color' ? parseColor(value) : value,
+            originalValue: unit === 'color' ? parseColor(originalValue) : parseFloat(originalValue || 0),
+            targetValue: unit === 'color' ? parseColor(value) : value,
             unit: unit
          };
       }.bind(this)).reject(function(transform){
          return (
-          (transform.originalValue == transform.targetValue) ||
+          (transform.originalValue === transform.targetValue) ||
           (
-          transform.unit != 'color' &&
+          transform.unit !== 'color' &&
           (isNaN(transform.originalValue) || isNaN(transform.targetValue))
           )
          );
@@ -1071,7 +1071,7 @@ Effect.Morph = Class.create(Effect.Base, {
       var style = { }, transform, i = this.transforms.length;
       while (i--) {
          style[(transform = this.transforms[i]).style] =
-         transform.unit=='color' ? '#'+
+         transform.unit === 'color' ? '#'+
           (Math.round(transform.originalValue[0]+
             (transform.targetValue[0]-transform.originalValue[0])*position)).toColorPart() +
           (Math.round(transform.originalValue[1]+
