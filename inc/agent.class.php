@@ -569,16 +569,15 @@ class PluginFusioninventoryAgent extends CommonDBTM {
    function infoByKey($device_id) {
       global $DB;
 
-      $iterator = $DB->request([
-         'FROM'   => $this->getTable(),
-         'WHERE'  => ['device_id' => $device_id],
-         'START'  => 0,
-         'LIMIT'  => 1
-      ]);
+      $query = "SELECT * FROM `".$this->getTable()."`
+         WHERE `device_id`='".$device_id."' LIMIT 1";
 
       $agent = [];
-      if (count($iterator)) {
-         $agent = $iterator->next();
+      $result = $DB->query($query);
+      if ($result) {
+         if ($DB->numrows($result) != 0) {
+            $agent = $DB->fetch_assoc($result);
+         }
       }
       return $agent;
    }
@@ -998,13 +997,8 @@ class PluginFusioninventoryAgent extends CommonDBTM {
     * @return array|false agent information if found, otherwise false
     */
    static function getByDeviceID($device_id) {
-      $agents = getAllDatasFromTable(
-         'glpi_plugin_fusioninventory_agents',
-         [
-            'device_id' => $device_id,
-            'lock'      => 0
-         ]
-      );
+      $agents = getAllDatasFromTable('glpi_plugin_fusioninventory_agents',
+                                      "`device_id`='$device_id' AND `lock`='0'");
       if (!empty($agents)) {
          return array_pop($agents);
       } else {
@@ -1208,27 +1202,23 @@ class PluginFusioninventoryAgent extends CommonDBTM {
       if ($retentiontime == 0) {
          return true;
       }
+      $sql = "SELECT * FROM `glpi_plugin_fusioninventory_agents`
+                   WHERE `last_contact` < date_add(now(), interval -".$retentiontime." day)";
+      $result = $DB->query($sql);
 
-      $iterator = $DB->request([
-         'FROM'   => 'glpi_plugin_fusioninventory_agents',
-         'WHERE'  => [
-            'last_contact' => ['<', new QueryExpression("date_add(now(), interval -".$retentiontime." day)")]
-         ]
-      ]);
-
-      if (count($iterator)) {
+      if ($result) {
          $cron_status = false;
          $action = $pfConfig->getValue('agents_action');
          if ($action == PluginFusioninventoryConfig::ACTION_CLEAN) {
             //delete agents
-            while ($data = $iterator->next()) {
+            while ($data = $DB->fetch_array($result)) {
                $pfAgent->delete($data);
                $task->addVolume(1);
                $cron_status = true;
             }
          } else {
             //change status of agents
-            while ($data = $iterator->next()) {
+            while ($data = $DB->fetch_array($result)) {
                $computer = new Computer();
                if ($computer->getFromDB($data['computers_id'])) {
                   $computer->update([
