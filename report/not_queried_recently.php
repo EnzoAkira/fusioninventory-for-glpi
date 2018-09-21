@@ -52,9 +52,9 @@ $NEEDED_ITEMS=["search", "computer", "infocom", "setup", "networking", "printer"
 
 include ("../../../inc/includes.php");
 
-Html::header(__('FusionInventory', 'fusioninventory'), filter_input(INPUT_SERVER, "PHP_SELF"), "utils", "report");
-
 Session::checkRight('plugin_fusioninventory_reportnetworkequipment', READ);
+
+Html::header(__('FusionInventory', 'fusioninventory'), filter_input(INPUT_SERVER, "PHP_SELF"), "tools", "report");
 
 $nbdays = filter_input(INPUT_GET, "nbdays");
 if ($nbdays == '') {
@@ -71,9 +71,9 @@ echo __('Number of days since last inventory', 'fusioninventory')." :&nbsp;";
 echo "</td>";
 echo "<td>";
 Dropdown::showNumber("nbdays", [
-                'value' => $nbdays,
-                'min'   => 1,
-                'max'   => 365]
+        'value' => $nbdays,
+        'min'   => 1,
+        'max'   => 365]
 );
 echo "</td>";
 echo "</tr>";
@@ -111,43 +111,48 @@ if (($state != "") AND ($state != "0")) {
    $state_sql = " AND `states_id` = '".$state."' ";
 }
 
-$query = "SELECT * FROM (
-SELECT `glpi_networkequipments`.`name`, `last_fusioninventory_update`, `serial`, `otherserial`,
-   `networkequipmentmodels_id`, `glpi_networkequipments`.`id` as `network_id`, 0 as `printer_id`,
-   `plugin_fusioninventory_configsecurities_id`,
-   `glpi_ipaddresses`.`name` as ip, `states_id`
-   FROM `glpi_plugin_fusioninventory_networkequipments`
-JOIN `glpi_networkequipments` on `networkequipments_id` = `glpi_networkequipments`.`id`
-LEFT JOIN `glpi_networkports`
-   ON (`glpi_networkequipments`.`id` = `glpi_networkports`.`items_id`
-       AND `glpi_networkports`.`itemtype` = 'NetworkEquipment')
-LEFT JOIN `glpi_networknames`
-     ON `glpi_networknames`.`items_id`=`glpi_networkports`.`id`
-        AND `glpi_networknames`.`itemtype`='NetworkPort'
-LEFT JOIN `glpi_ipaddresses`
-     ON `glpi_ipaddresses`.`items_id`=`glpi_networknames`.`id`
-        AND `glpi_ipaddresses`.`itemtype`='NetworkName'
-WHERE ((NOW() > ADDDATE(last_fusioninventory_update, INTERVAL ".$nbdays." DAY) OR last_fusioninventory_update IS NULL)
-   ".$state_sql.")
-UNION
-SELECT `glpi_printers`.`name`, `last_fusioninventory_update`, `serial`, `otherserial`,
-   `printermodels_id`, 0 as `network_id`, `glpi_printers`.`id` as `printer_id`,
-   `plugin_fusioninventory_configsecurities_id`,
-   `glpi_ipaddresses`.`name` as ip, `states_id`
-   FROM `glpi_plugin_fusioninventory_printers`
-JOIN `glpi_printers` on `printers_id` = `glpi_printers`.`id`
-LEFT JOIN `glpi_networkports`
-   ON (`glpi_printers`.`id` = `glpi_networkports`.`items_id`
-       AND `glpi_networkports`.`itemtype` = 'Printer')
-LEFT JOIN `glpi_networknames`
-     ON `glpi_networknames`.`items_id`=`glpi_networkports`.`id`
-        AND `glpi_networknames`.`itemtype`='NetworkPort'
-LEFT JOIN `glpi_ipaddresses`
-     ON `glpi_ipaddresses`.`items_id`=`glpi_networknames`.`id`
-        AND `glpi_ipaddresses`.`itemtype`='NetworkName'
-WHERE (NOW() > ADDDATE(last_fusioninventory_update, INTERVAL ".$nbdays." DAY) OR last_fusioninventory_update IS NULL)
+$query = "SELECT * FROM ( 
+      SELECT `glpi_networkequipments`.`name`, `last_fusioninventory_update`, `serial`, `otherserial`,
+            `networkequipmentmodels_id`, `glpi_networkequipments`.`id` as `network_id`, 0 as `printer_id`,
+            `plugin_fusioninventory_configsecurities_id`,
+            `glpi_ipaddresses`.`name` as ip, `states_id`
+      FROM `glpi_plugin_fusioninventory_networkequipments`
+          JOIN `glpi_networkequipments` on `networkequipments_id` = `glpi_networkequipments`.`id`
+            LEFT JOIN `glpi_networkports`
+             ON (`glpi_networkequipments`.`id` = `glpi_networkports`.`items_id`
+             AND `glpi_networkports`.`itemtype` = 'NetworkEquipment')
+            LEFT JOIN `glpi_networknames`
+             ON `glpi_networknames`.`items_id`=`glpi_networkports`.`id`
+             AND `glpi_networknames`.`itemtype`='NetworkPort'
+            LEFT JOIN `glpi_ipaddresses`
+             ON `glpi_ipaddresses`.`items_id`=`glpi_networknames`.`id`
+             AND `glpi_ipaddresses`.`itemtype`='NetworkName'
+      WHERE ((NOW() > ADDDATE(
+                            last_fusioninventory_update, 
+                            INTERVAL ".$nbdays." DAY) 
+                            OR last_fusioninventory_update IS NULL) 
+             ".$state_sql.")
+             UNION
+      SELECT `glpi_printers`.`name`, `last_fusioninventory_update`, `serial`, `otherserial`, 
+            `printermodels_id`, 0 as `network_id`, `glpi_printers`.`id` as `printer_id`,
+            `plugin_fusioninventory_configsecurities_id`,
+            `glpi_ipaddresses`.`name` as ip, `states_id` 
+      FROM `glpi_plugin_fusioninventory_printers` 
+          JOIN `glpi_printers` on `printers_id` = `glpi_printers`.`id` 
+            LEFT JOIN `glpi_networkports`
+             ON (`glpi_printers`.`id` = `glpi_networkports`.`items_id`
+             AND `glpi_networkports`.`itemtype` = 'Printer') 
+            LEFT JOIN `glpi_networknames`
+             ON `glpi_networknames`.`items_id`=`glpi_networkports`.`id`
+             AND `glpi_networknames`.`itemtype`='NetworkPort'
+            LEFT JOIN `glpi_ipaddresses`
+             ON `glpi_ipaddresses`.`items_id`=`glpi_networknames`.`id`
+             AND `glpi_ipaddresses`.`itemtype`='NetworkName'
+      WHERE (NOW() > ADDDATE(
+                           last_fusioninventory_update, 
+                           INTERVAL ".$nbdays." DAY) 
+                           OR last_fusioninventory_update IS NULL) 
 AND `glpi_networkports`.`items_id`='Printer' ".$state_sql.") as `table`
-
 ORDER BY last_fusioninventory_update DESC";
 
 echo "<table class='tab_cadre' cellpadding='5' width='950'>";

@@ -51,9 +51,9 @@ $DBCONNECTION_REQUIRED=0;
 define('GLPI_ROOT', '../../..');
 include (GLPI_ROOT . "/inc/includes.php");
 
-Html::header(__('FusionInventory', 'fusioninventory'), filter_input(INPUT_SERVER, "PHP_SELF"), "utils", "report");
-
 Session::checkRight('plugin_fusioninventory_reportnetworkequipment', READ);
+
+Html::header(__('FusionInventory', 'fusioninventory'), filter_input(INPUT_SERVER, "PHP_SELF"), "tools", "report");
 
 $FK_port = filter_input(INPUT_GET, "networkports_id");
 
@@ -64,10 +64,12 @@ echo "<tr class='tab_bg_1' align='center'>";
 echo "<td>";
 echo _n('Network port', 'Network ports', 1)." :&nbsp;";
 
-$query = "SELECT `glpi_networkequipments`.`name` as `name`, `glpi_networkports`.`name` as `pname`,
+$query = "SELECT `glpi_networkequipments`.`name` as `name`, 
+                 `glpi_networkports`.`name` as `pname`,
                  `glpi_networkports`.`id` as `id`
           FROM `glpi_networkequipments`
-               LEFT JOIN `glpi_networkports` ON `items_id` = `glpi_networkequipments`.`id`
+               LEFT JOIN `glpi_networkports` 
+               ON `items_id` = `glpi_networkequipments`.`id`
           WHERE `itemtype`='NetworkEquipment'
           ORDER BY `glpi_networkequipments`.`name`, `glpi_networkports`.`logical_number`;";
 
