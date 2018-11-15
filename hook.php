@@ -161,7 +161,7 @@ function plugin_fusioninventory_getAddSearchOptions($itemtype) {
       $sopt[5171]['joinparams']    = ['beforejoin'
                                        => ['table'      => 'glpi_plugin_fusioninventory_deploygroups_staticdatas',
                                                 'joinparams' => ['jointype'          => 'itemtype_item',
-                                                    'specific_itemtype' => 'Computer']]];
+                                                                        'specific_itemtype' => 'Computer']]];
 
       $sopt[5178]['table']     = 'glpi_plugin_fusioninventory_inventorycomputercomputers';
       $sopt[5178]['field']     = 'hostid';
@@ -186,6 +186,13 @@ function plugin_fusioninventory_getAddSearchOptions($itemtype) {
       $sopt[5181]['name']      = _n('License', 'Licenses', 2);
       $sopt[5181]['joinparams']  = ['jointype' => 'child'];
       $sopt[5181]['massiveaction'] = false;
+
+      $sopt[5182]['table']     = 'glpi_plugin_fusioninventory_inventorycomputercomputers';
+      $sopt[5182]['field']     = 'last_boot';
+      $sopt[5182]['name']      = __('FusInv', 'fusioninventory')." - ".__('Last boot', 'fusioninventory');
+      $sopt[5182]['joinparams']  = ['jointype' => 'child'];
+      $sopt[5182]['datatype']  = 'datetime';
+      $sopt[5182]['massiveaction'] = false;
 
    }
 
@@ -317,7 +324,7 @@ function plugin_fusioninventory_giveItem($type, $id, $data, $num) {
    $searchopt = &Search::getOptions($type);
    $table = $searchopt[$id]["table"];
    $field = $searchopt[$id]["field"];
-   $label =[];
+
    switch ($table.'.'.$field) {
 
       case "glpi_plugin_fusioninventory_taskjobs.status":
@@ -540,17 +547,32 @@ function plugin_fusioninventory_giveItem($type, $id, $data, $num) {
 
             // ** Name and link of networking device (switch)
             case "glpi_plugin_fusioninventory_networkports.id" :
-               $query = "SELECT `glpi_networkequipments`.`name` AS `name`, `glpi_networkequipments`.`id` AS `id`
-                         FROM `glpi_networkequipments`
-                              LEFT JOIN `glpi_networkports`
-                                        ON `items_id` = `glpi_networkequipments`.`id`
-                              LEFT JOIN `glpi_plugin_fusioninventory_networkports`
-                                        ON `glpi_networkports`.`id`=`networkports_id`
-                         WHERE `glpi_plugin_fusioninventory_networkports`.`id`='".
-                            $data['raw']["ITEM_$num"]."'
-                         LIMIT 0, 1;";
-               $result = $DB->query($query);
-               $data2 = $DB->fetch_assoc($result);
+               $data2 = $DB->request([
+                  'SELECT'    => [
+                     'glpi_networkequipments.name AS name',
+                     'glpi_networkequipments.id AS id'
+                  ],
+                  'FROM'      => 'glpi_networkequipments',
+                  'LEFT JOIN' => [
+                     'glpi_networkports' => [
+                        'FKEY' => [
+                           'glpi_networkequipments'   => 'id',
+                           'glpi_networkports'        => 'items_id'
+                        ]
+                     ],
+                     'glpi_plugin_fusioninventory_networkports' => [
+                        'FKEY' => [
+                           'glpi_networkports'                          => 'id',
+                           'glpi_plugin_fusioninventory_networkports'   => 'items_id'
+                        ]
+                     ]
+                  ],
+                  'WHERE'     => [
+                     'glpi_plugin_fusioninventory_networkports.id' => $data['raw']["ITEM_$num"]
+                  ],
+                  'START'     => 0,
+                  'LIMIT'     => 1
+               ])->next();
                $out = "<a href='".$CFG_GLPI['root_doc']."/front/networking.form.php?id=".
                           $data2["id"]."'>";
                $out .= $data2["name"]."</a>";
@@ -604,14 +626,15 @@ function plugin_fusioninventory_giveItem($type, $id, $data, $num) {
                $item->getFromDB($Array_device["items_id"]);
                $out = "<div align='center'>" . $item->getLink(1);
 
-               $query = "SELECT *
-                         FROM `glpi_networkports`
-                         WHERE `id`='" . $data['raw']["ITEM_$num"] . "';";
-               $result = $DB->query($query);
+               $iterator = $DB->request([
+                  'FROM'   => 'glpi_networkports',
+                  'WHERE'  => ['id' => $data['raw']["ITEM_$num"]]
+               ]);
 
-               if ($DB->numrows($result) != "0") {
+               if (count($iterator)) {
+                  $row = $iterator->next();
                   $out .= "<br/><a href='".$CFG_GLPI['root_doc']."/front/networkport.form.php?id=";
-                  $out .= $data['raw']["ITEM_$num"]."'>".$DB->result($result, 0, "name")."</a>";
+                  $out .= $data['raw']["ITEM_$num"]."'>".$row['name']."</a>";
                }
                $out .= "</td>";
                return $out;
@@ -627,7 +650,7 @@ function plugin_fusioninventory_giveItem($type, $id, $data, $num) {
                }
                return $out;
 
-            // ** Display Old Value (before change of value)
+            // ** Display Old Value (before changement of value)
             case "glpi_plugin_fusinvsnmp_networkportlogs.old_value" :
                // TODO ADD LINK TO DEVICE
                if ((substr_count($data['raw']["ITEM_$num"], ":") == 5)
@@ -751,11 +774,12 @@ function plugin_fusioninventory_searchOptionsValues($item) {
    } else if ($item['searchoption']['table'] == 'glpi_plugin_fusioninventory_taskjobstates'
            AND $item['searchoption']['field'] == 'uniqid') {
       $elements = [];
-      $query = "SELECT * FROM `".$item['searchoption']['table']."`
-      GROUP BY `uniqid`
-      ORDER BY `uniqid`";
-      $result = $DB->query($query);
-      while ($data = $DB->fetch_array($result)) {
+      $iterator = $DB->request([
+         'FROM'      => $item['searchoption']['table'],
+         'GROUPBY'   => 'uniqid',
+         'ORDER'     => 'uniqid'
+      ]);
+      while ($data = $iterator->next()) {
          $elements[$data['uniqid']] = $data['uniqid'];
       }
       Dropdown::showFromArray($item['name'], $elements, ['value' => $item['value']]);
@@ -889,7 +913,7 @@ function plugin_fusioninventory_MassiveActions($type) {
 
 
 /**
- * Manage massive actions fields display
+ * Manage massice actions fields display
  *
  * @param array $options
  * @return boolean
@@ -921,7 +945,7 @@ function plugin_fusioninventory_MassiveActionsFieldsDisplay($options = []) {
       case 'glpi_plugin_fusioninventory_agents.id' :
          Dropdown::show("PluginFusinvsnmpAgent",
                         ['name' => $linkfield,
-                            'comment' => false]);
+                              'comment' => false]);
          return true;
 
       case 'glpi_plugin_fusioninventory_agents.threads_networkdiscovery' :
@@ -987,7 +1011,7 @@ function plugin_fusioninventory_addSelect($type, $id, $num) {
 
             // ** FusionInventory - switch
             case "glpi_plugin_fusioninventory_networkequipments.name" :
-               return "GROUP_CONCAT(glpi_networkequipments.name SEPARATOR '$$$$') AS ITEM_$num, ";
+               return "GROUP_CONCAT(DISTINCT glpi_networkequipments.name SEPARATOR '$$$$') AS ITEM_$num, ";
 
             // ** FusionInventory - switch port
             case "glpi_plugin_fusioninventory_networkports.id" :
@@ -1518,7 +1542,9 @@ function plugin_fusioninventory_addWhere($link, $nott, $type, $id, $val) {
                $names = json_decode($val);
                if ($names !== null && is_array($names)) {
                   $names = array_map(
-                     create_function('$a', 'return "\"".$a."\"";'),
+                     function ($a) {
+                        return "\"".$a."\"";
+                     },
                      $names
                   );
                   return $link." `$table`.`name` IN (".implode(',', $names) . ")";
@@ -1953,7 +1979,7 @@ function plugin_pre_item_delete_fusioninventory($parm) {
          case 'NetworkPort':
             $DB->delete(
                'glpi_plugin_fusioninventory_networkports', [
-                  'networkports_id' => $parm->getField('id')
+                  'networkports_id' => $param->getField('id')
                ]
             );
             break;
@@ -2026,11 +2052,10 @@ function plugin_item_add_fusioninventory($parm) {
  * Manage when purge an item
  *
  * @param object $parm
- * @param int $port_id
  * @return object
  */
 function plugin_item_purge_fusioninventory($parm) {
-    global $DB;
+
    switch (get_class($parm)) {
 
       case 'NetworkPort_NetworkPort':
@@ -2114,21 +2139,32 @@ function plugin_item_purge_fusioninventory($parm) {
 
       case 'NetworkEquipment':
          // Delete all ports
-          $DB->delete(
+         $DB->delete(
             'glpi_plugin_fusioninventory_networkequipments', [
                'networkequipments_id' => $parm->fields['id']
             ]
          );
 
-         $query_select = "SELECT `glpi_plugin_fusioninventory_networkports`.`id`,
-                              `glpi_networkports`.`id` as nid
-                          FROM `glpi_plugin_fusioninventory_networkports`
-                               LEFT JOIN `glpi_networkports`
-                                         ON `glpi_networkports`.`id` = `networkports_id`
-                          WHERE `items_id`='".$parm->fields["id"]."'
-                                AND `itemtype`='NetworkEquipment';";
-         $result = $DB->query($query_select);
-         while ($data = $DB->fetch_array($result)) {
+         $iterator = $DB->request([
+            'SELECT'    => [
+               'glpi_plugin_fusioninventory_networkports.id',
+               'glpi_networkports.id AS nid'
+            ],
+            'FROM'      => 'glpi_plugin_fusioninventory_networkports',
+            'LEFT JOIN' => [
+               'glpi_networkports' => [
+                  'FKEY' => [
+                     'glpi_networkports'                          => 'id',
+                     'glpi_plugin_fusioninventory_networkports'   => 'networkports_id'
+                  ]
+               ]
+            ],
+            'WHERE'     => [
+               'items_id'  => $parm->fields['id'],
+               'itemtype'  => 'NetworkEquipment'
+            ]
+         ]);
+         while ($data = $iterator->next()) {
             $DB->delete(
                'glpi_plugin_fusioninventory_networkports', [
                   'id' => $data['id']

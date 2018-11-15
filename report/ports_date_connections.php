@@ -51,9 +51,9 @@ $DBCONNECTION_REQUIRED=0;
 
 include ("../../../inc/includes.php");
 
-Session::checkRight('plugin_fusioninventory_reportnetworkequipment', READ);
+Html::header(__('FusionInventory', 'fusioninventory'), filter_input(INPUT_SERVER, "PHP_SELF"), "utils", "report");
 
-Html::header(__('FusionInventory', 'fusioninventory'), filter_input(INPUT_SERVER, "PHP_SELF"), "tools", "report");
+Session::checkRight('plugin_fusioninventory_reportnetworkequipment', READ);
 
 $reset_search = filter_input(INPUT_GET, "reset_search");
 if ($reset_search != '') {
@@ -80,18 +80,15 @@ if (isset($_POST["dropdown_calendar"]) && isset($_POST["dropdown_sup_inf"])) {
    $networkport = new NetworkPort();
    $networkequipment = new NetworkEquipment();
 
-   $query = "SELECT `glpi_networkports`.`id`, a.date_mod, `glpi_networkports`.`items_id` 
-          FROM `glpi_networkports`"
-            . " LEFT JOIN `glpi_plugin_fusioninventory_networkportconnectionlogs` a"
-            . " ON a.id= (
-                          SELECT MAX(fn.id) a_id
-                          FROM glpi_plugin_fusioninventory_networkportconnectionlogs fn
-                          WHERE (fn.networkports_id_source = glpi_networkports.id
-                          OR fn.networkports_id_destination = glpi_networkports.id))"
-       . " WHERE a.id IS NOT NULL AND `glpi_networkports`.`itemtype`='NetworkEquipment'"
-       . " AND a.date_mod".$date_search
-       . " ORDER BY `glpi_networkports`.`items_id`";
-
+   $query = "SELECT `glpi_networkports`.`id`, a.date_mod, `glpi_networkports`.`items_id` FROM `glpi_networkports`"
+           . " LEFT JOIN `glpi_plugin_fusioninventory_networkportconnectionlogs` a"
+           . " ON a.id= (SELECT MAX(fn.id) a_id
+               FROM glpi_plugin_fusioninventory_networkportconnectionlogs fn
+               WHERE (fn.networkports_id_source = glpi_networkports.id
+                      OR fn.networkports_id_destination = glpi_networkports.id))"
+           . " WHERE a.id IS NOT NULL AND `glpi_networkports`.`itemtype`='NetworkEquipment'"
+           . " AND a.date_mod".$date_search
+           . " ORDER BY `glpi_networkports`.`items_id`";
    $result = $DB->query($query);
    echo "<table width='950' class='tab_cadre_fixe'>";
       echo "<tr class='tab_bg_1'>";
