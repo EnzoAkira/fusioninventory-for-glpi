@@ -940,13 +940,19 @@ class PluginFusioninventoryFormatconvert {
                   }else{
                       $array_tmp['designation'] = $a_cpus['NAME'];
                   }
+				  // For models 'INTEL'
                   if(isset($a_cpus['MANUFACTURER']) && $a_cpus['MANUFACTURER'] == 'Intel') {
                     if (isset($a_cpus['NAME'])){
                       if (preg_match("/(([a-zA-Z][3-9])\-([0-9]{4}))/",$a_cpus['NAME'],$matches)) {
                           $array_tmp['deviceprocessormodels_id'] = $matches[1];
                       }
                     }
-                  }
+                  }else{
+					  // For models NOT 'INTEL'
+					  if (isset($a_cpus['NAME'])){
+						  $array_tmp['deviceprocessormodels_id'] = $array_tmp['designation'];
+					  }
+				  }
                   $array_tmp['frequence'] = $array_tmp['frequency'];
                   $array_tmp['frequency_default'] = $array_tmp['frequency'];
                   $a_inventory['processor'][] = $array_tmp;
