@@ -179,16 +179,16 @@ class PluginFusioninventoryTimeslot extends CommonDBTM {
       if (count($timeslot_ids)) {
          $condition['plugin_fusioninventory_timeslots_id'] = $timeslot_ids;
       }
-
+     
       if (!is_null($weekdays)) {
-         $condition['day'] = $weekdays;
+         $condition[] = "and `day` = '".$weekdays."'";
       }
 
       $results = [];
 
       $timeslot_entries = getAllDatasFromTable(
          "glpi_plugin_fusioninventory_timeslotentries",
-         $condition,
+         implode("\n", $condition),
          false, ''
       );
 

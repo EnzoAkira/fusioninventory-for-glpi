@@ -45,11 +45,11 @@
  *
  */
 
-define ("PLUGIN_FUSIONINVENTORY_VERSION", "9.3+1.1");
+define ("PLUGIN_FUSIONINVENTORY_VERSION", "9.3+1.2");
 // Minimal GLPI version, inclusive
-define('PLUGIN_FUSIONINVENTORY_GLPI_MIN_VERSION', '9.4');
+define('PLUGIN_FUSIONINVENTORY_GLPI_MIN_VERSION', '9.3');
 // Maximum GLPI version, exclusive
-define('PLUGIN_FUSIONINVENTORY_GLPI_MAX_VERSION', '9.5');
+define('PLUGIN_FUSIONINVENTORY_GLPI_MAX_VERSION', '9.4');
 // Used for use config values in 'cache'
 $PF_CONFIG = [];
 // used to know if computer inventory is in reallity a ESX task
@@ -57,8 +57,8 @@ $PF_ESXINVENTORY = false;
 
 define ("PLUGIN_FUSIONINVENTORY_XML", '');
 
-define ("PLUGIN_FUSIONINVENTORY_OFFICIAL_RELEASE", "0");
-define ("PLUGIN_FUSIONINVENTORY_REALVERSION", "9.3+1.1 SNAPSHOT");
+define ("PLUGIN_FUSIONINVENTORY_OFFICIAL_RELEASE", "1");
+define ("PLUGIN_FUSIONINVENTORY_REALVERSION", "9.3+1.2");
 include_once(GLPI_ROOT."/inc/includes.php");
 
 define("PLUGIN_FUSIONINVENTORY_REPOSITORY_DIR",
