@@ -293,17 +293,19 @@ class PluginFusioninventoryFormatconvert {
 
       // * HARDWARE
       $array_tmp = $thisc->addValues($array['HARDWARE'],
-                                     [
-                                        'NAME'                => 'name',
-                                        'WINPRODID'           => 'licenseid',
-                                        'WINPRODKEY'          => 'license_number',
-                                        'WORKGROUP'           => 'domains_id',
-                                        'UUID'                => 'uuid',
-                                        'LASTLOGGEDUSER'      => 'users_id',
-                                        'manufacturers_id'    => 'manufacturers_id',
-                                        'computermodels_id'   => 'computermodels_id',
-                                        'serial'              => 'serial',
-                                        'computertypes_id'    => 'computertypes_id']);
+                                       [
+                                          'NAME'                => 'name',
+                                          'WINPRODID'           => 'licenseid',
+                                          'WINPRODKEY'          => 'license_number',
+                                          'WORKGROUP'           => 'domains_id',
+                                          'UUID'                => 'uuid',
+                                          'LASTLOGGEDUSER'      => 'users_id',
+                                          'manufacturers_id'    => 'manufacturers_id',
+                                          'computermodels_id'   => 'computermodels_id',
+                                          'serial'              => 'serial',
+                                          'computertypes_id'    => 'computertypes_id'
+                                          ]
+                                       );
 
       if (!isset($array['OPERATINGSYSTEM']) || empty($array['OPERATINGSYSTEM'])) {
          $array['OPERATINGSYSTEM'] = [];
@@ -372,6 +374,10 @@ class PluginFusioninventoryFormatconvert {
          $a_inventory['fusioninventorycomputer']['operatingsystem_installationdate'] =
                      $array['OPERATINGSYSTEM']['INSTALL_DATE'];
       }
+      if (isset($array['OPERATINGSYSTEM']['BOOT_TIME'])
+              && !empty($array['OPERATINGSYSTEM']['BOOT_TIME'])) {
+         $a_inventory['fusioninventorycomputer']['last_boot'] = $array['OPERATINGSYSTEM']['BOOT_TIME'];
+      }
 
       if (isset($array['HARDWARE']['DESCRIPTION'])) {
          $a_inventory['fusioninventorycomputer']['oscomment'] = $array['HARDWARE']['DESCRIPTION'];
@@ -379,6 +385,10 @@ class PluginFusioninventoryFormatconvert {
 
       if (empty($a_inventory['fusioninventorycomputer']['operatingsystem_installationdate'])) {
          $a_inventory['fusioninventorycomputer']['operatingsystem_installationdate'] = "NULL";
+      }
+
+      if (empty($a_inventory['fusioninventorycomputer']['last_boot'])) {
+         $a_inventory['fusioninventorycomputer']['last_boot'] = "NULL";
       }
 
       // * BIOS
@@ -922,37 +932,39 @@ class PluginFusioninventoryFormatconvert {
       if ($pfConfig->getValue('component_processor') == 1) {
          if (isset($array['CPUS'])) {
             foreach ($array['CPUS'] as $a_cpus) {
-               if (is_array($a_cpus)
-                       && (isset($a_cpus['NAME'])
-                        || isset($a_cpus['TYPE']))) {
+               if (is_array($a_cpus) 
+                  && (isset($a_cpus['NAME'])
+                     || isset($a_cpus['TYPE']))) {
                   $array_tmp = $thisc->addValues($a_cpus,
-                                                 [
-                                                     'SPEED'        => 'frequency',
-                                                     'MANUFACTURER' => 'manufacturers_id',
-                                                     'SERIAL'       => 'serial',
-                                                     'TYPE'         => 'designation',
-                                                     'CORE'         => 'nbcores_default',
-                                                     'THREAD'       => 'nbthreads_default',
-                                                     'NAME'         => 'deviceprocessormodels_id']);
+                                                [
+                                                   'SPEED'        => 'frequency',
+                                                   'MANUFACTURER' => 'manufacturers_id',
+                                                   'SERIAL'       => 'serial',
+                                                   'TYPE'         => 'designation',
+                                                   'CORE'         => 'nbcores_default',
+                                                   'THREAD'       => 'nbthreads_default',
+                                                   'NAME'         => 'deviceprocessormodels_id'
+                                                   ]
+                                                );
 
                   if ($array_tmp['designation'] == '' && isset($a_cpus['TYPE'])) {
                      $array_tmp['designation'] = $a_cpus['TYPE'];
                   }else{
-                      $array_tmp['designation'] = $a_cpus['NAME'];
+                     $array_tmp['designation'] = $a_cpus['NAME'];
                   }
-				  // For models 'INTEL'
+                  // For models 'INTEL'
                   if(isset($a_cpus['MANUFACTURER']) && $a_cpus['MANUFACTURER'] == 'Intel') {
-                    if (isset($a_cpus['NAME'])){
-                      if (preg_match("/(([a-zA-Z][3-9])\-([0-9]{4}))/",$a_cpus['NAME'],$matches)) {
-                          $array_tmp['deviceprocessormodels_id'] = $matches[1];
-                      }
-                    }
+                     if (isset($a_cpus['NAME'])){
+                        if (preg_match("/(([a-zA-Z][3-9])\-([0-9]{4}))/",$a_cpus['NAME'],$matches)) {
+                           $array_tmp['deviceprocessormodels_id'] = $matches[1];
+                        }
+                     }
                   }else{
-					  // For models NOT 'INTEL'
-					  if (isset($a_cpus['NAME'])){
-						  $array_tmp['deviceprocessormodels_id'] = $array_tmp['designation'];
-					  }
-				  }
+                     // For models NOT 'INTEL'
+                     if (isset($a_cpus['NAME'])){
+                        $array_tmp['deviceprocessormodels_id'] = $array_tmp['designation'];
+                     }
+                  }
                   $array_tmp['frequence'] = $array_tmp['frequency'];
                   $array_tmp['frequency_default'] = $array_tmp['frequency'];
                   $a_inventory['processor'][] = $array_tmp;
@@ -961,30 +973,6 @@ class PluginFusioninventoryFormatconvert {
          }
       }
 
-	  // * PSUs
-       /* $a_inventory['powersupplies'] = [];
-       if ($pfConfig->getValue('component_powersupplies') == 1) {
-           if (isset($array['POWERSUPPLIES'])) {
-               foreach ($array['POWERSUPPLIES'] as $a_psus) {
-                   if (is_array($a_psus)
-                       && (isset($a_psus['NAME']))) {
-                       $array_tmp = $thisc->addValues($a_psus,
-                           [
-                               'POWER_MAX'       => 'power',
-                               'MANUFACTURER'    => 'manufacturers_id',
-                               'NAME'            => 'designation',
-                               'PLUGGED'         => 'plugged']);
-                       if ($array_tmp['designation'] == '') {
-                           $array_tmp['designation'] = 'PSU';
-                       }
-                       $array_tmp['power_max'] = $array_tmp['power'];
-                       //$array_tmp['frequency_default'] = $array_tmp['frequency'];
-                       $a_inventory['powersupplies'][] = $array_tmp;
-                   }
-               }
-           }
-       } */
-	   
       // * DRIVES
       $a_inventory['computerdisk'] = [];
       if (isset($array['DRIVES'])) {
@@ -1057,59 +1045,32 @@ class PluginFusioninventoryFormatconvert {
                                                     'SPEED'        => 'frequence',
                                                     'TYPE'         => 'devicememorytypes_id',
                                                     'SERIALNUMBER' => 'serial',
-                                                    'NUMSLOTS'     => 'busID',
-                                                    'MANUFACTURER' => 'manufacturers_id']);
-
-                  // Verify cases when NUMSLOTS start @ 0 numbering
+                                                    'NUMSLOTS'     => 'busID']);
                   if ($array_tmp['size'] > 0) {
-                      $array_tmp['designation'] = "";
-                      if (isset($a_memories["NUMSLOTS"])){
-                          if ($a_memories["NUMSLOTS"] = 0){
-                              $array_tmp["busID"] = 0;
-                          }
-                      }
-                      if (isset($a_memories["FORMFACTOR"]) && $a_memories["FORMFACTOR"] != "") {
-                          $array_tmp["designation"] = $a_memories["FORMFACTOR"];
-                          // Re-do naming of Memories - add Type(eg:DDR3) + Max Capacity shortened + GB
-                          if (!empty($array_tmp["designation"])) {
-                              $str = $a_memories["CAPACITY"];
-                              $cap = substr($str, 0, 1);
-                              $array_tmp["designation"] .= " - " . $cap . "GB";
-                          }
-                      } else {
-                          if (isset($a_memories["TYPE"])
-                              && $a_memories["TYPE"] != "Empty Slot"
-                              && $a_memories["TYPE"] != "Unknown") {
-                              $array_tmp["designation"] = $a_memories["TYPE"];
-                          }
-                          // Re-do naming of Memories - add Type(eg:DDR3) + Max Capacity shortened + GB
-                          if (isset($a_memories["DESCRIPTION"])) {
-                              if (!empty($array_tmp["designation"])) {
-                                  $str = $a_memories["CAPACITY"];
-                                  $cap = substr($str, 0, 1);
-                                  $array_tmp["designation"] .= " - " . $cap . "GB";
-                              }
-                          }
-                          // **** Old code ****
-                          /*if (!empty($array_tmp["designation"])) {
+                     $array_tmp['designation'] = "";
+                     if (isset($a_memories["TYPE"])
+                             && $a_memories["TYPE"]!="Empty Slot"
+                             && $a_memories["TYPE"] != "Unknown") {
+                        $array_tmp["designation"] = $a_memories["TYPE"];
+                     }
+                     if (isset($a_memories["DESCRIPTION"])) {
+                        if (!empty($array_tmp["designation"])) {
                            $array_tmp["designation"].=" - ";
-                           }
-                          $array_tmp["designation"] .= $a_memories["DESCRIPTION"];*/
-                      }
-                      // Insert value to size_default
-                      if (isset($a_memories["CAPACITY"])) {
-                          $array_tmp["size_default"] = $a_memories["CAPACITY"];
-                      }
-                      //agent sometimes gives " MHz" or "MT/s" along with frequency
-                      $array_tmp['frequence'] = str_replace([' MHz', ' MT/s'], '', $array_tmp['frequence']);
-                      $a_inventory['memory'][] = $array_tmp;
-                    }
+                        }
+                        $array_tmp["designation"] .= $a_memories["DESCRIPTION"];
+                     }
+                     //agent sometimes gives " MHz" or "MT/s" along with frequence
+                     $array_tmp['frequence'] = str_replace([' MHz', ' MT/s'], '', $array_tmp['frequence']);
+                     $a_inventory['memory'][] = $array_tmp;
+                  }
                }
             }
          } else if (isset($array['HARDWARE']['MEMORY'])) {
             $array_tmp = $thisc->addValues($array['HARDWARE'],
-                                           ['MEMORY' => 'size']);
-
+                                           [
+                                              'MEMORY' => 'size'
+                                              ]
+                                             );
             $array_tmp['designation'] = 'Dummy Memory Module';
             $array_tmp['frequence'] = 0;
             $array_tmp['serial'] = '';
@@ -1504,11 +1465,23 @@ class PluginFusioninventoryFormatconvert {
             foreach ($array['ANTIVIRUS'] as $a_antiviruses) {
                $array_tmp = $thisc->addValues($a_antiviruses,
                                              [
-                                                'NAME'     => 'name',
-                                                'COMPANY'  => 'manufacturers_id',
-                                                'VERSION'  => 'antivirus_version',
-                                                'ENABLED'  => 'is_active',
-                                                'UPTODATE' => 'is_uptodate']);
+                                                'NAME'         => 'name',
+                                                'COMPANY'      => 'manufacturers_id',
+                                                'VERSION'      => 'antivirus_version',
+                                                'BASE_VERSION' => 'signature_version',
+                                                'ENABLED'      => 'is_active',
+                                                'UPTODATE'     => 'is_uptodate',
+                                                'EXPIRATION'   => 'date_expiration']);
+               //Check if the expiration date has the right format to be inserted in DB
+               if (isset($array_tmp['date_expiration'])) {
+                  $matches = [];
+                  preg_match("/^(\d{2})\/(\d{2})\/(\d{4})$/", $array_tmp['date_expiration'], $matches);
+                  if (count($matches) == 4) {
+                     $array_tmp['date_expiration'] = $matches[3]."-".$matches[2]."-".$matches[1];
+                  } else {
+                     unset($array_tmp['date_expiration']);
+                  }
+               }
                $a_inventory['antivirus'][] = $array_tmp;
             }
          }
@@ -1611,12 +1584,12 @@ class PluginFusioninventoryFormatconvert {
       $is_software_recursive = 0;
 
       //Count the number of software dictionnary rules
-      $nb_RuleDictionnarySoftware
-                                 = countElementsInTable("glpi_rules",
-                                                ['sub_type'  => 'RuleDictionnarySoftware',
-                                                 'is_active' => 1
-                                                ]
-                                 );
+      $nb_RuleDictionnarySoftware = countElementsInTable("glpi_rules",
+         [
+            'sub_type'  => 'RuleDictionnarySoftware',
+            'is_active' => 1,
+         ]
+      );
       //Configuration says that software can be created in the computer's entity
       if ($entities_id_software < 0) {
          $entities_id_software = $entities_id;
@@ -1643,11 +1616,14 @@ class PluginFusioninventoryFormatconvert {
          //Store the raw values in the array
          $array_tmp = $this->addValues($a_softwares,
                                         [
-                                           'PUBLISHER'   => 'manufacturers_id',
-                                           'NAME'        => 'name',
-                                           'VERSION'     => 'version',
-                                           'INSTALLDATE' => 'date_install',
-                                           'SYSTEM_CATEGORY' => '_system_category']);
+                                           'PUBLISHER'         => 'manufacturers_id',
+                                           'NAME'              => 'name',
+                                           'VERSION'           => 'version',
+                                           'COMMENTS'          => 'comment',
+                                           'INSTALLDATE'       => 'date_install',
+                                           'SYSTEM_CATEGORY'   => '_system_category'
+                                          ]
+                                       );
          if (!isset($array_tmp['name'])
                  || $array_tmp['name'] == '') {
             if (isset($a_softwares['GUID'])
@@ -1825,7 +1801,7 @@ class PluginFusioninventoryFormatconvert {
       $data_collect = [];
 
       $data_registries = getAllDatasFromTable('glpi_plugin_fusioninventory_collects_registries_contents',
-                                         "`computers_id`='".$computers_id."'");
+         ['computers_id' => $computers_id]);
 
       foreach ($data_registries as $data) {
          $res_rule = $pfCollectRuleCollection->processAllRules(
@@ -1840,7 +1816,7 @@ class PluginFusioninventoryFormatconvert {
       }
 
       $data_wmis = getAllDatasFromTable('glpi_plugin_fusioninventory_collects_wmis_contents',
-                                         "`computers_id`='".$computers_id."'");
+         ['computers_id' => $computers_id]);
 
       foreach ($data_wmis as $data) {
          $res_rule = $pfCollectRuleCollection->processAllRules(
@@ -1855,7 +1831,7 @@ class PluginFusioninventoryFormatconvert {
       }
 
       $data_files = getAllDatasFromTable('glpi_plugin_fusioninventory_collects_files_contents',
-                                         "`computers_id`='".$computers_id."'");
+         ['computers_id' => $computers_id]);
 
       foreach ($data_files as $data) {
          $a_split = explode("/", $data['pathfile']);
@@ -2140,10 +2116,9 @@ class PluginFusioninventoryFormatconvert {
    }
 
    /**
-   * Manage transformation for general information
+   * Manage transformation for general informations
    * @since 9.2+2.0
    *
-   * @param string $itemtype item type
    * @param array $array the inventory
    * @param array $a_inventory reference to the output inventory
    */
@@ -2178,10 +2153,9 @@ class PluginFusioninventoryFormatconvert {
    }
 
    /**
-   * Manage transformation for additional general information
+   * Manage transformation for additional general informations
    * @since 9.2+2.0
    *
-   * @param string $itemtype item type
    * @param array $array the inventory
    * @param array $a_inventory reference to the output inventory
    */

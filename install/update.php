@@ -1576,7 +1576,6 @@ function do_entities_migration($migration) {
    $a_table['oldkeys'] = [];
 
    migrateTablesFusionInventory($migration, $a_table);
-
    if (countElementsInTable($a_table['name']) == 0) {
       $a_configs = getAllDatasFromTable('glpi_plugin_fusioninventory_configs',
          ['type' => 'transfers_id_auto']);

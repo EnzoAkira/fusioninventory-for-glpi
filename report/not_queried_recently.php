@@ -147,6 +147,7 @@ LEFT JOIN `glpi_ipaddresses`
         AND `glpi_ipaddresses`.`itemtype`='NetworkName'
 WHERE (NOW() > ADDDATE(last_fusioninventory_update, INTERVAL ".$nbdays." DAY) OR last_fusioninventory_update IS NULL)
 AND `glpi_networkports`.`items_id`='Printer' ".$state_sql.") as `table`
+
 ORDER BY last_fusioninventory_update DESC";
 
 echo "<table class='tab_cadre' cellpadding='5' width='950'>";

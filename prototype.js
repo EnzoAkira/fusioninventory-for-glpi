@@ -12,7 +12,7 @@ var Prototype = {
 
   Browser: (function(){
     var ua = navigator.userAgent;
-    var isOpera = Object.prototype.toString.call(window.opera) === '[object Opera]';
+    var isOpera = Object.prototype.toString.call(window.opera) == '[object Opera]';
     return {
       IE:             !!window.attachEvent && !isOpera,
       Opera:          isOpera,
@@ -70,7 +70,7 @@ var Class = (function() {
     return true;
   })();
 
-  function subclass() {}
+  function subclass() {};
   function create() {
     var parent = null, properties = $A(arguments);
     if (Object.isFunction(properties[0]))
@@ -105,16 +105,16 @@ var Class = (function() {
         properties = Object.keys(source);
 
     if (IS_DONTENUM_BUGGY) {
-      if (source.toString !== Object.prototype.toString)
+      if (source.toString != Object.prototype.toString)
         properties.push("toString");
-      if (source.valueOf !== Object.prototype.valueOf)
+      if (source.valueOf != Object.prototype.valueOf)
         properties.push("valueOf");
     }
 
     for (var i = 0, length = properties.length; i < length; i++) {
       var property = properties[i], value = source[property];
       if (ancestor && Object.isFunction(value) &&
-          value.argumentNames()[0] === "$super") {
+          value.argumentNames()[0] == "$super") {
         var method = value;
         value = (function(m) {
           return function() { return ancestor[m].apply(this, arguments); };
@@ -291,7 +291,7 @@ var Class = (function() {
     return _toString.call(object) === ARRAY_CLASS;
   }
 
-  var hasNativeIsArray = (typeof Array.isArray === 'function')
+  var hasNativeIsArray = (typeof Array.isArray == 'function')
     && Array.isArray([]) && !Array.isArray({});
 
   if (hasNativeIsArray) {
