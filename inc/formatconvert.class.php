@@ -955,7 +955,8 @@ class PluginFusioninventoryFormatconvert {
                   // For models 'INTEL'
                   if(isset($a_cpus['MANUFACTURER']) && $a_cpus['MANUFACTURER'] == 'Intel') {
                      if (isset($a_cpus['NAME'])){
-                        if (preg_match("/(([a-zA-Z][3-9])\-([0-9]{4}))/",$a_cpus['NAME'],$matches)) {
+                     	///Old regex: (([a-zA-Z][3-9])\-([0-9]{4}))/
+                        if (preg_match("/(([a-zA-Z][3-9])\-([0-9]{4})\s([v][0-9]))/",$a_cpus['NAME'],$matches)) {
                            $array_tmp['deviceprocessormodels_id'] = $matches[1];
                         }
                      }
@@ -965,6 +966,8 @@ class PluginFusioninventoryFormatconvert {
                         $array_tmp['deviceprocessormodels_id'] = $array_tmp['designation'];
                      }
                   }
+                  $array_tmp['nbcores'] = $array_tmp['nbcores_default'];
+                  $array_tmp['nbthreads'] = $array_tmp['nbthreads_default'];
                   $array_tmp['frequence'] = $array_tmp['frequency'];
                   $array_tmp['frequency_default'] = $array_tmp['frequency'];
                   $a_inventory['processor'][] = $array_tmp;
@@ -1045,24 +1048,54 @@ class PluginFusioninventoryFormatconvert {
                                                     'SPEED'        => 'frequence',
                                                     'TYPE'         => 'devicememorytypes_id',
                                                     'SERIALNUMBER' => 'serial',
-                                                    'NUMSLOTS'     => 'busID']);
+                                                    'NUMSLOTS'     => 'busID',
+                                                    'MANUFACTURER' => 'manufacturers_id'
+                                                    ]);
+
+                  // Verify cases when NUMSLOTS start @ 0 numbering
                   if ($array_tmp['size'] > 0) {
-                     $array_tmp['designation'] = "";
-                     if (isset($a_memories["TYPE"])
-                             && $a_memories["TYPE"]!="Empty Slot"
-                             && $a_memories["TYPE"] != "Unknown") {
-                        $array_tmp["designation"] = $a_memories["TYPE"];
-                     }
-                     if (isset($a_memories["DESCRIPTION"])) {
-                        if (!empty($array_tmp["designation"])) {
+                      $array_tmp['designation'] = "";
+                      if (isset($a_memories["NUMSLOTS"])){
+                          if ($a_memories["NUMSLOTS"] = 0){
+                              $array_tmp["busID"] = 0;
+                          }
+                      }
+                      if (isset($a_memories["FORMFACTOR"]) && $a_memories["FORMFACTOR"] != "") {
+                          $array_tmp["designation"] = $a_memories["FORMFACTOR"];
+                          // Re-do naming of Memories - add Type(eg:DDR3) + Max Capacity shortened + GB
+                          if (!empty($array_tmp["designation"])) {
+                              $str = $a_memories["CAPACITY"];
+                              $cap = substr($str, 0, 1);
+                              $array_tmp["designation"] .= " - " . $cap . "GB";
+                          }
+                      } else {
+                          if (isset($a_memories["TYPE"])
+                              && $a_memories["TYPE"] != "Empty Slot"
+                              && $a_memories["TYPE"] != "Unknown") {
+                              $array_tmp["designation"] = $a_memories["TYPE"];
+                          }
+                          // Re-do naming of Memories - add Type(eg:DDR3) + Max Capacity shortened + GB
+                          if (isset($a_memories["DESCRIPTION"])) {
+                              if (!empty($array_tmp["designation"])) {
+                                  $str = $a_memories["CAPACITY"];
+                                  $cap = substr($str, 0, 1);
+                                  $array_tmp["designation"] .= " - " . $cap . "GB";
+                              }
+                          }
+                          // **** Old code ****
+                          /*if (!empty($array_tmp["designation"])) {
                            $array_tmp["designation"].=" - ";
-                        }
-                        $array_tmp["designation"] .= $a_memories["DESCRIPTION"];
-                     }
-                     //agent sometimes gives " MHz" or "MT/s" along with frequence
-                     $array_tmp['frequence'] = str_replace([' MHz', ' MT/s'], '', $array_tmp['frequence']);
-                     $a_inventory['memory'][] = $array_tmp;
-                  }
+                           }
+                          $array_tmp["designation"] .= $a_memories["DESCRIPTION"];*/
+                      }
+                      // Insert value to size_default
+                      if (isset($a_memories["CAPACITY"])) {
+                          $array_tmp["size_default"] = $a_memories["CAPACITY"];
+                      }
+                      //agent sometimes gives " MHz" or "MT/s" along with frequency
+                      $array_tmp['frequence'] = str_replace([' MHz', ' MT/s'], '', $array_tmp['frequence']);
+                      $a_inventory['memory'][] = $array_tmp;
+                    }
                }
             }
          } else if (isset($array['HARDWARE']['MEMORY'])) {
@@ -1916,13 +1949,39 @@ class PluginFusioninventoryFormatconvert {
          }
       }
 
-      $a_int_values = ['capacity', 'freesize', 'totalsize', 'memory', 'memory_size',
-         'pages_total', 'pages_n_b', 'pages_color', 'pages_recto_verso', 'scanned',
-         'pages_total_print', 'pages_n_b_print', 'pages_color_print', 'pages_total_copy',
-         'pages_n_b_copy', 'pages_color_copy', 'pages_total_fax',
-         'cpu', 'trunk', 'is_active', 'uptodate', 'nbthreads', 'vcpu', 'ram',
-         'ifinerrors', 'ifinoctets', 'ifouterrors', 'ifoutoctets', 'ifmtu', 'speed',
-         'nbcores', 'nbthreads', 'frequency'];
+      $a_int_values = [
+         'capacity',
+         'freesize',
+         'totalsize',
+         'memory',
+         'memory_size',
+         'ram',
+         'pages_total',
+         'pages_total_print',
+         'pages_total_copy',
+         'pages_total_fax',
+         'pages_n_b',
+         'pages_n_b_print',
+         'pages_n_b_copy',
+         'pages_color',
+         'pages_color_print',
+         'pages_color_copy',
+         'pages_recto_verso',
+         'scanned',
+         'cpu',
+         'vcpu',
+         'trunk',
+         'is_active',
+         'uptodate',
+         'nbthreads',
+         'nbcores',
+         'ifinerrors',
+         'ifinoctets',
+         'ifouterrors',
+         'ifoutoctets',
+         'ifmtu',
+         'speed',
+         'frequency'];
 
       foreach ($a_key as $key=>$value) {
          if (!isset($a_return[$value])

@@ -329,14 +329,16 @@ class PluginFusioninventoryInventoryComputerLib extends PluginFusioninventoryInv
             $iterator = $DB->request([
                'SELECT'    => [
                   'glpi_items_deviceprocessors.id',
+                  'glpi_items_deviceprocessors.nbcores',
+                  'glpi_items_deviceprocessors.nbthreadss',
                   'designation',
+                  'nbcores_default',
+                  'nbthreads_default',
                   'frequency',
                   'frequence',
                   'frequency_default',
                   'serial',
-                  'manufacturers_id',
-                  'glpi_items_deviceprocessors.nbcores',
-                  'glpi_items_deviceprocessors.nbthreads'
+                  'manufacturers_id'
                ],
                'FROM'      => 'glpi_items_deviceprocessors',
                'LEFT JOIN' => [
@@ -371,11 +373,16 @@ class PluginFusioninventoryInventoryComputerLib extends PluginFusioninventoryInv
                unset($arrays['frequence']);
                unset($arrays['frequency']);
                unset($arrays['frequency_default']);
+               unset($arrays['deviceprocessormodels_id']);
                foreach ($db_processors as $keydb => $arraydb) {
                   $frequencedb = $arraydb['frequence'];
                   unset($arraydb['frequence']);
                   unset($arraydb['frequency']);
                   unset($arraydb['frequency_default']);
+                  $arraydb['nbcores'] = $db_processors['nbcores_default'];
+                  $arraydb['nbthreads'] = $db_processors['nbthreads_default'];
+                  unset($arraydb['nbcores_default']);
+                  unset($arraydb['nbthreads_default']);
                   if ($arrays == $arraydb) {
                      $a_criteria = $deviceProcessor->getImportCriteria();
                      $criteriafrequence = $a_criteria['frequence'];
