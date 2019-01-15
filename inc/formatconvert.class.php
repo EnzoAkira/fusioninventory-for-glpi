@@ -944,8 +944,7 @@ class PluginFusioninventoryFormatconvert {
                                                    'CORE'         => 'nbcores_default',
                                                    'THREAD'       => 'nbthreads_default',
                                                    'NAME'         => 'deviceprocessormodels_id'
-                                                   ]
-                                                );
+                                                   ]);
 
                   if ($array_tmp['designation'] == '' && isset($a_cpus['TYPE'])) {
                      $array_tmp['designation'] = $a_cpus['TYPE'];
@@ -1056,7 +1055,7 @@ class PluginFusioninventoryFormatconvert {
                   if ($array_tmp['size'] > 0) {
                       $array_tmp['designation'] = "";
                       if (isset($a_memories["NUMSLOTS"])){
-                          if ($a_memories["NUMSLOTS"] = 0){
+                          if ($a_memories["NUMSLOTS"] == 0){
                               $array_tmp["busID"] = 0;
                           }
                       }
@@ -1065,8 +1064,13 @@ class PluginFusioninventoryFormatconvert {
                           // Re-do naming of Memories - add Type(eg:DDR3) + Max Capacity shortened + GB
                           if (!empty($array_tmp["designation"])) {
                               $str = $a_memories["CAPACITY"];
-                              $cap = substr($str, 0, 1);
-                              $array_tmp["designation"] .= " - " . $cap . "GB";
+															if (strlen($str) > 4){
+																$cap = substr($str, 0, 2);
+															} else {
+																$cap = substr($str, 0, 1);
+															}
+															$frq = $a_memories["SPEED"];
+                              $array_tmp["designation"] .= " - " . $cap . "GB " . $frq . "MHz";
                           }
                       } else {
                           if (isset($a_memories["TYPE"])
@@ -1078,8 +1082,13 @@ class PluginFusioninventoryFormatconvert {
                           if (isset($a_memories["DESCRIPTION"])) {
                               if (!empty($array_tmp["designation"])) {
                                   $str = $a_memories["CAPACITY"];
-                                  $cap = substr($str, 0, 1);
-                                  $array_tmp["designation"] .= " - " . $cap . "GB";
+																	if (strlen($str) > 4){
+																		$cap = substr($str, 0, 2);
+																	} else {
+																		$cap = substr($str, 0, 1);
+																	}
+																	$frq = $a_memories["SPEED"];
+                                  $array_tmp["designation"] .= " - " . $cap . "GB " . $frq . "MHz";
                               }
                           }
                           // **** Old code ****
@@ -1099,21 +1108,20 @@ class PluginFusioninventoryFormatconvert {
                }
             }
          } else if (isset($array['HARDWARE']['MEMORY'])) {
-            $array_tmp = $thisc->addValues($array['HARDWARE'],
-                                           [
-                                              'MEMORY' => 'size'
-                                              ]
-                                             );
-            $array_tmp['designation'] = 'Dummy Memory Module';
-            $array_tmp['frequence'] = 0;
-            $array_tmp['serial'] = '';
-            $array_tmp['devicememorytypes_id'] = '';
-            $array_tmp['busID'] = '';
-            $a_inventory['memory'][] = $array_tmp;
-         }
-      }
+					 $array_tmp = $thisc->addValues($array['HARDWARE'],
+					 																	[
+																							 'MEMORY' => 'size']
+																						);
+						$array_tmp['designation'] = 'Default Memory Info';
+						$array_tmp['frequence'] = 0;
+						$array_tmp['serial'] = '';
+						$array_tmp['devicememorytypes_id'] = '';
+						$array_tmp['busID'] = '';
+						$a_inventory['memory'][] = $array_tmp;
+						}
+				}
 
-      // * MONITORS
+			// * MONITORS
       $a_inventory['monitor'] = [];
       if (isset($array['MONITORS'])) {
          $a_serialMonitor = [];
@@ -1275,55 +1283,63 @@ class PluginFusioninventoryFormatconvert {
       }
 
       // * STORAGES/COMPUTERDISK
-      $a_inventory['harddrive'] = [];
-      if (isset($array['STORAGES'])) {
-         foreach ($array['STORAGES']  as $a_storage) {
-            $type_tmp = PluginFusioninventoryFormatconvert::getTypeDrive($a_storage);
-            if ($type_tmp == "Drive") {
-               // it's cd-rom / dvd
-               //               if ($pfConfig->getValue(,
-               //                    "component_drive") =! 0) {
-               if ($pfConfig->getValue('component_drive') == 1) {
-                  $array_tmp = $thisc->addValues($a_storage,
-                                                 [
-                                                    'SERIALNUMBER' => 'serial',
-                                                    'NAME'         => 'designation',
-                                                    'TYPE'         => 'interfacetypes_id',
-                                                    'MANUFACTURER' => 'manufacturers_id',
-                                                     ]);
-                  if ($array_tmp['designation'] == '') {
-                     if (isset($a_storage['DESCRIPTION'])) {
-                        $array_tmp['designation'] = $a_storage['DESCRIPTION'];
-                     }
-                  }
-                  $a_inventory['drive'][] = $array_tmp;
-               }
-            } else {
-               // it's harddisk
-               //               if ($pfConfig->getValue(,
-               //                    "component_harddrive") != 0) {
-               if (is_array($a_storage)) {
-                  if ($pfConfig->getValue('component_harddrive') == 1) {
-                     $array_tmp = $thisc->addValues($a_storage,
-                                                    [
-                                                        'DISKSIZE'      => 'capacity',
-                                                        'INTERFACE'     => 'interfacetypes_id',
-                                                        'MANUFACTURER'  => 'manufacturers_id',
-                                                        'MODEL'         => 'designation',
-                                                        'SERIALNUMBER'  => 'serial']);
-                     if ($array_tmp['designation'] == '') {
-                        if (isset($a_storage['NAME'])) {
-                           $array_tmp['designation'] = $a_storage['NAME'];
-                        } else if (isset($a_storage['DESIGNATION'])) {
-                           $array_tmp['designation'] = $a_storage['DESIGNATION'];
-                        }
-                     }
-                     $a_inventory['harddrive'][] = $array_tmp;
-                  }
-               }
-            }
-         }
-      }
+			$a_inventory['harddrive'] = [];
+			if (isset($array['STORAGES'])) {
+				foreach ($array['STORAGES']  as $a_storage) {
+					$type_tmp = PluginFusioninventoryFormatconvert::getTypeDrive($a_storage);
+					if ($type_tmp == "Drive") {
+						// ******** it's cd-rom / dvd ********
+						//               if ($pfConfig->getValue(,
+						//                    "component_drive") =! 0) {
+						if ($pfConfig->getValue('component_drive') == 1) {
+							$array_tmp = $thisc->addValues($a_storage,
+																							[
+																								'SERIALNUMBER' => 'serial',
+																								'NAME'         => 'designation',
+																								'TYPE'         => 'interfacetypes_id',
+																								'MANUFACTURER' => 'manufacturers_id',
+																								]);
+							if ($array_tmp['designation'] == '') {
+								if (isset($a_storage['DESCRIPTION'])) {
+									$array_tmp['designation'] = $a_storage['DESCRIPTION'];
+									}
+								}
+							$a_inventory['drive'][] = $array_tmp;
+							}
+						} else {
+						// ******** it's harddisk ********
+						// if ($pfConfig->getValue(,"component_harddrive") != 0) {}
+							if (is_array($a_storage)) {
+								if ($pfConfig->getValue('component_harddrive') == 1) {
+									$array_tmp = $thisc->addValues($a_storage,
+																									[
+																										'DISKSIZE'      => 'capacity',
+																										'INTERFACE'     => 'interfacetypes_id',
+																										'MANUFACTURER'  => 'manufacturers_id',
+																										'MODEL'         => 'designation',
+																										'SERIALNUMBER'  => 'serial'
+																										]);
+									if ($array_tmp['designation'] == '') {
+										if (isset($a_storage['NAME'])) {
+											$array_tmp['designation'] = $a_storage['NAME'];
+											} else if (isset($a_storage['DESIGNATION'])) {
+												$array_tmp['designation'] = $a_storage['DESIGNATION'];
+												}
+										}
+										if ($array_tmp['interfacetypes_id'] == '') {
+											$array_tmp['interfacetypes_id'] = $a_storage['DESCRIPTION'];
+											}
+
+										//capacity_default - Table 'glpi_deviceharddrives'
+										$array_tmp['capacity_default'] = $array_tmp['capacity'];
+										$array_tmp['deviceharddrivemodels_id'] = $a_storage['MODEL'];
+
+										$a_inventory['harddrive'][] = $array_tmp;
+			          	}
+			        	}
+			      	}
+			   }
+				}
 
       // * USERS
       $cnt = 0;
@@ -2456,7 +2472,7 @@ class PluginFusioninventoryFormatconvert {
     */
    static function getTypeDrive($data) {
       $to_match_regex = ['rom', 'dvd', 'blu[\s-]*ray', 'reader',
-                         'sd[\s-]*card', 'micro[\s-]*sd', 'mmc'];
+                         'sd[\s-]*card', 'micro[\s-]*sd', 'mmc', 'removable'];
       $found_drive    = false;
       foreach ($to_match_regex as $regex) {
          foreach (['TYPE', 'MODEL', 'NAME'] as $field) {
