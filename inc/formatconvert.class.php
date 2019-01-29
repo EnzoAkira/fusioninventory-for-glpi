@@ -955,7 +955,8 @@ class PluginFusioninventoryFormatconvert {
                   if(isset($a_cpus['MANUFACTURER']) && $a_cpus['MANUFACTURER'] == 'Intel') {
                      if (isset($a_cpus['NAME'])){
                      	///Old regex: (([a-zA-Z][3-9])\-([0-9]{4}))/
-                        if (preg_match("/(([a-zA-Z][3-9])\-([0-9]{4})\s([v][0-9]))/",$a_cpus['NAME'],$matches)) {
+                        //if (preg_match("/(([a-zA-Z][3-9])\-([0-9]{4})\s([v][0-9]))/",$a_cpus['NAME'],$matches)) {
+                        if (preg_match("/CPU (.*) @/",$a_cpus['NAME'],$matches)) {
                            $array_tmp['deviceprocessormodels_id'] = $matches[1];
                         }
                      }
