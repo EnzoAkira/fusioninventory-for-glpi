@@ -4,3 +4,4 @@ composer.lock
 .gh_token
 .idea
 *.bak
+*.xml
