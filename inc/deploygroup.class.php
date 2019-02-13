@@ -133,9 +133,10 @@ class PluginFusioninventoryDeployGroup extends CommonDBTM {
 
    function getMatchingItemsCount($itemtype) {
       $count = 0;
-      if ($itemtype == 'PluginFusionInventoryTaskjob') {
+      if ($itemtype == 'PluginFusionInventoryTaskjob'
+            && is_numeric($_GET['id'])) {
          $pfTaskjob = new PluginFusioninventoryTaskjob();
-         $data = $pfTaskjob->find("`actors` LIKE '%\"PluginFusioninventoryDeployGroup\":\"".$_GET['id']."\"%'");
+         $data = $pfTaskjob->find(['actors' => ['LIKE', '%"PluginFusioninventoryDeployGroup":"'.$_GET['id'].'"%']]);
          $count = count($data);
       }
       return $count;
@@ -552,8 +553,9 @@ class PluginFusioninventoryDeployGroup extends CommonDBTM {
       $results = [];
       if ($group->isStaticGroup()) {
          $staticgroup = new PluginFusioninventoryDeployGroup_Staticdata();
-         foreach ($staticgroup->find("`plugin_fusioninventory_deploygroups_id`='$groups_id'
-                                AND `itemtype`='Computer'") as $tmpgroup) {
+         foreach ($staticgroup->find(
+               ['plugin_fusioninventory_deploygroups_id' => $groups_id,
+                'itemtype'                               => 'Computer']) as $tmpgroup) {
             $results[$tmpgroup['items_id']] = $tmpgroup['items_id'];
          }
       } else {
@@ -621,4 +623,63 @@ class PluginFusioninventoryDeployGroup extends CommonDBTM {
    }
 
 
+   /**
+    * Display for a computer the groups where it is
+    *
+    * @param integer $computers_id
+    */
+   function showForComputer($computers_id) {
+      global $DB;
+
+      echo "<table width='950' class='tab_cadre_fixe'>";
+
+      echo "<tr>";
+      echo "<th>";
+      echo __('Group');
+      echo "</th>";
+      echo "<th>";
+      echo __('Type');
+      echo "</th>";
+      echo "</tr>";
+
+      $link = Toolbox::getItemTypeFormURL("PluginFusioninventoryDeployGroup");
+
+      $iterator = $DB->request([
+         'FROM'   => PluginFusioninventoryDeployGroup_Staticdata::getTable(),
+         'WHERE'  => [
+            'items_id' => $computers_id,
+            'itemtype' => 'Computer',
+         ],
+      ]);
+      while ($data = $iterator->next()) {
+         $this->getFromDB($data['plugin_fusioninventory_deploygroups_id']);
+         echo "<tr>";
+         echo "<td>";
+         echo "<a href='".$link."?id=".$this->fields['id']."'>".$this->fields['name']."</a>";
+         echo "</td>";
+         echo "<td>";
+         echo __('Static group', 'fusioninventory');
+         echo "</td>";
+         echo "</tr>";
+      }
+
+      $iterator = $DB->request([
+         'FROM'   => PluginFusioninventoryDeployGroup_Dynamicdata::getTable(),
+         'WHERE'  => [
+            'computers_id_cache' => ["LIKE", '%"'.$computers_id.'"%'],
+         ],
+      ]);
+      while ($data = $iterator->next()) {
+         $this->getFromDB($data['plugin_fusioninventory_deploygroups_id']);
+         echo "<tr>";
+         echo "<td>";
+         echo "<a href='".$link."?id=".$this->fields['id']."'>".$this->fields['name']."</a>";
+         echo "</td>";
+         echo "<td>";
+         echo __('Dynamic group', 'fusioninventory');
+         echo "</td>";
+         echo "</tr>";
+      }
+      echo "</table>";
+   }
 }

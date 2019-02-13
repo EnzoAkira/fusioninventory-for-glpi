@@ -45,11 +45,11 @@
  *
  */
 
-define ("PLUGIN_FUSIONINVENTORY_VERSION", "9.3+1.1");
+define ("PLUGIN_FUSIONINVENTORY_VERSION", "9.4.0+1.0");
 // Minimal GLPI version, inclusive
-define('PLUGIN_FUSIONINVENTORY_GLPI_MIN_VERSION', '9.3');
+define('PLUGIN_FUSIONINVENTORY_GLPI_MIN_VERSION', '9.4');
 // Maximum GLPI version, exclusive
-define('PLUGIN_FUSIONINVENTORY_GLPI_MAX_VERSION', '9.4');
+define('PLUGIN_FUSIONINVENTORY_GLPI_MAX_VERSION', '9.5');
 // Used for use config values in 'cache'
 $PF_CONFIG = [];
 // used to know if computer inventory is in reallity a ESX task
@@ -58,8 +58,7 @@ $PF_ESXINVENTORY = false;
 define ("PLUGIN_FUSIONINVENTORY_XML", '');
 
 define ("PLUGIN_FUSIONINVENTORY_OFFICIAL_RELEASE", "0");
-define ("PLUGIN_FUSIONINVENTORY_REALVERSION", "9.3+1.1 SNAPSHOT");
-include_once(GLPI_ROOT."/inc/includes.php");
+define ("PLUGIN_FUSIONINVENTORY_REALVERSION", PLUGIN_FUSIONINVENTORY_VERSION . " SNAPSHOT");
 
 define("PLUGIN_FUSIONINVENTORY_REPOSITORY_DIR",
        GLPI_PLUGIN_DOC_DIR."/fusioninventory/files/repository/");
@@ -128,7 +127,8 @@ function plugin_init_fusioninventory() {
       $Plugin->registerClass('PluginFusioninventoryTaskjobstate',
          [
             'addtabon' => [
-               'PluginFusioninventoryTask'
+               'PluginFusioninventoryTask',
+               'Computer',
             ]
          ]
       );
@@ -514,33 +514,35 @@ function plugin_version_fusioninventory() {
 function plugin_fusioninventory_check_prerequisites() {
    global $DB;
 
-   $version = rtrim(GLPI_VERSION, '-dev');
-   if (version_compare($version, PLUGIN_FUSIONINVENTORY_GLPI_MIN_VERSION, 'lt')) {
-      echo "This plugin requires GLPI " . PLUGIN_FUSIONINVENTORY_GLPI_MIN_VERSION;
-      return false;
-   }
-
-   if (!isset($_SESSION['glpi_plugins'])) {
-      $_SESSION['glpi_plugins'] = [];
-   }
-
-   if (version_compare(GLPI_VERSION, PLUGIN_FUSIONINVENTORY_GLPI_MIN_VERSION.'-dev', '!=')
-      && version_compare(GLPI_VERSION, PLUGIN_FUSIONINVENTORY_GLPI_MIN_VERSION, 'lt')
-      || version_compare(GLPI_VERSION, PLUGIN_FUSIONINVENTORY_GLPI_MAX_VERSION, 'ge')) {
-      if (method_exists('Plugin', 'messageIncompatible')) {
-         echo Plugin::messageIncompatible('core', PLUGIN_FUSIONINVENTORY_GLPI_MIN_VERSION, PLUGIN_FUSIONINVENTORY_GLPI_MAX_VERSION);
-      } else {
-         // TRANS: %1$s is the minimum GLPI version inclusive, %2$s the maximum version exclusive
-         echo sprintf(__('Your GLPI version not compatible, require >= %1$s and < %2$s', 'fusioninventory'),
-         PLUGIN_FUSIONINVENTORY_GLPI_MIN_VERSION,
-         PLUGIN_FUSIONINVENTORY_GLPI_MAX_VERSION);
+   if (!method_exists('Plugin', 'checkVersions')) {
+      $version = rtrim(GLPI_VERSION, '-dev');
+      if (version_compare($version, PLUGIN_FUSIONINVENTORY_GLPI_MIN_VERSION, 'lt')) {
+         echo "This plugin requires GLPI " . PLUGIN_FUSIONINVENTORY_GLPI_MIN_VERSION;
+         return false;
       }
-      return false;
-   }
 
-   if (!function_exists('finfo_open')) {
-      echo __('fileinfo extension (PHP) is required...', 'fusioninventory');
-      return false;
+      if (!isset($_SESSION['glpi_plugins'])) {
+         $_SESSION['glpi_plugins'] = [];
+      }
+
+      if (version_compare(GLPI_VERSION, PLUGIN_FUSIONINVENTORY_GLPI_MIN_VERSION.'-dev', '!=')
+         && version_compare(GLPI_VERSION, PLUGIN_FUSIONINVENTORY_GLPI_MIN_VERSION, 'lt')
+         || version_compare(GLPI_VERSION, PLUGIN_FUSIONINVENTORY_GLPI_MAX_VERSION, 'ge')) {
+         if (method_exists('Plugin', 'messageIncompatible')) {
+            echo Plugin::messageIncompatible('core', PLUGIN_FUSIONINVENTORY_GLPI_MIN_VERSION, PLUGIN_FUSIONINVENTORY_GLPI_MAX_VERSION);
+         } else {
+            // TRANS: %1$s is the minimum GLPI version inclusive, %2$s the maximum version exclusive
+            echo sprintf(__('Your GLPI version not compatible, require >= %1$s and < %2$s', 'fusioninventory'),
+            PLUGIN_FUSIONINVENTORY_GLPI_MIN_VERSION,
+            PLUGIN_FUSIONINVENTORY_GLPI_MAX_VERSION);
+         }
+         return false;
+      }
+
+      if (!function_exists('finfo_open')) {
+         echo __('fileinfo extension (PHP) is required...', 'fusioninventory');
+         return false;
+      }
    }
 
    $plugin = new Plugin();
