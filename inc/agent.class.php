@@ -789,12 +789,13 @@ class PluginFusioninventoryAgent extends CommonDBTM {
       echo "</td>";
       echo "<td>";
 
-      $load_anim   = '<i class="fa fa-spinner fa-spin fa-fw"></i>';
+      $load_anim   = '<i class="fas fa-sync fa-spin fa-fw"></i>';
 
       echo Html::scriptBlock("$(function() {
          var waiting = false;
 
-         var refresh_status = function(display_refresh = true) {
+         var refresh_status = function(display_refresh) {
+            var display_refresh = (typeof display_refresh !== 'undefined') ? display_refresh : true;
             $('#agent_status').html('$load_anim');
             $('#refresh_status').hide();
             $('#force_inventory_button').hide();
@@ -853,7 +854,7 @@ class PluginFusioninventoryAgent extends CommonDBTM {
       echo "<span id='agent_status'>".
            __("not yet requested, refresh?", 'fusioninventory').
            "</span>";
-      echo "<span id='refresh_status'><i class='fa fa-refresh'></i></span>";
+      echo "<span id='refresh_status'><i class='fas fa-sync'></i></span>";
       echo "</td>";
 
       echo "<td colspan='2'>";
