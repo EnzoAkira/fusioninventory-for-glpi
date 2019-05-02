@@ -576,7 +576,7 @@ class PluginFusioninventoryPrinterLog extends CommonDBTM {
               $CFG_GLPI['root_doc']."/plugins/fusioninventory/front/printer_info.form.php'>";
       echo "<table class='tab_cadre' cellpadding='5' width='950'>";
       $mapping = new PluginFusioninventoryMapping();
-      $maps = $mapping->find("`itemtype`='Printer'");
+      $maps = $mapping->find(['itemtype' => 'Printer']);
       foreach ($maps as $mapfields) {
          if (!isset($mapfields["shortlocale"])) {
             $mapfields["shortlocale"] = $mapfields["locale"];
@@ -793,7 +793,7 @@ class PluginFusioninventoryPrinterLog extends CommonDBTM {
 
             echo "</table><br/>";
          } else {
-            if (count($input > 0)) {
+            if (count($input) > 0) {
                $split = explode(' > ', $name);
                $a_graph[] = [
                    'key'    => $split[count($split) - 1],

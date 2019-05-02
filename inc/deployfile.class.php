@@ -98,12 +98,10 @@ class PluginFusioninventoryDeployFile extends PluginFusioninventoryDeployPackage
       // compute short shas to find the corresponding entries in database
       $short_shas = [];
       foreach ($data['jobs']['associatedFiles'] as $sha512) {
-         $short_shas[] = "'".substr($sha512, 0, 6)."'";
+         $short_shas[] = substr($sha512, 0, 6);
       }
       // find corresponding file entries
-      $files = $this->find(
-         "shortsha512 IN (".implode(",", $short_shas).")"
-      );
+      $files = $this->find(['shortsha512' => $short_shas]);
       // do a quick mapping between database id and short shas
       $files_mapping = [];
       foreach ($files as $file) {
@@ -236,7 +234,7 @@ class PluginFusioninventoryDeployFile extends PluginFusioninventoryDeployPackage
       }
       if ($canedit) {
          echo "<tr><th>";
-         Html::checkAllAsCheckbox("filesList$rand", mt_rand());
+         echo Html::getCheckAllAsCheckbox("filesList$rand", mt_rand());
          echo "</th><th colspan='3' class='mark'></th></tr>";
       }
       echo "</table>";
@@ -803,7 +801,7 @@ class PluginFusioninventoryDeployFile extends PluginFusioninventoryDeployPackage
       }
 
       $file_present_in_db =
-         (!empty($this->find("shortsha512 = '$short_sha512'")));
+         (!empty($this->find(['shortsha512' => $short_sha512])));
 
       $new_entry = [
          'name'                   => $filename,
@@ -895,8 +893,9 @@ class PluginFusioninventoryDeployFile extends PluginFusioninventoryDeployPackage
       $pfDeployPackage = new PluginFusioninventoryDeployPackage();
 
       // try to find file in other packages
-      $rows = $pfDeployPackage->find("`json` LIKE '%".substr($sha512, 0, 6 )."%'
-                                  AND `json` LIKE '%$sha512%'" );
+      $rows = $pfDeployPackage->find(
+            ['json' => ['LIKE', '%'.substr($sha512, 0, 6 ).'%'],
+             'json' => ['LIKE', '%'.$sha512.'%']]);
 
       //file found in other packages, do not remove parts in repo
       if (count($rows) > 0) {
@@ -1050,7 +1049,7 @@ class PluginFusioninventoryDeployFile extends PluginFusioninventoryDeployPackage
       $a_files = $this->find();
       foreach ($a_files as $data) {
          $cnt = countElementsInTable('glpi_plugin_fusioninventory_deploypackages',
-            ['json' => ['LIKE' => '%"' . $data['sha512'] . '"%']]);
+            ['json' => ['LIKE', '%"' . $data['sha512'] . '"%']]);
          if ($cnt == 0) {
             $this->delete($data);
             $manifest_filename = PLUGIN_FUSIONINVENTORY_MANIFESTS_DIR.$data['sha512'];

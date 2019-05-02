@@ -885,7 +885,7 @@ function pluginFusioninventoryUpdate($current_version, $migrationname = 'Migrati
    // Add new config values if not added
    $input = $config->initConfigModule(true);
    foreach ($input as $name=>$value) {
-      $a_conf = $config->find("`type`='".$name."'");
+      $a_conf = $config->find(['type' => $name]);
       if (count($a_conf) == 0) {
          $config->add(['type' => $name, 'value' => $value]);
       }
@@ -2787,8 +2787,8 @@ function do_computercomputer_migration($migration) {
       $iterator = $DB->request(['FROM' => 'glpi_plugin_fusinvinventory_libserialization']);
       while ($data = $iterator->next()) {
          $a_pfcomputer = current($pfInventoryComputerComputer->find(
-                                                "`computers_id`='".$data['computers_id']."'",
-                                                "", 1));
+               ['computers_id' => $data['computers_id']],
+               [], 1));
          if (empty($a_pfcomputer)) {
             // Add
             if (countElementsInTable("glpi_computers",
@@ -3580,12 +3580,12 @@ function do_networkport_migration($migration) {
    $NetworkPort = new NetworkPort();
    $NetworkPort_Vlan = new NetworkPort_Vlan();
    $NetworkPort_NetworkPort = new NetworkPort_NetworkPort();
-   $a_networkports = $NetworkPort->find("`itemtype`=''");
+   $a_networkports = $NetworkPort->find(['itemtype' => '']);
    foreach ($a_networkports as $data) {
       if ($NetworkPort_NetworkPort->getFromDBForNetworkPort($data['id'])) {
          $NetworkPort_NetworkPort->delete($NetworkPort_NetworkPort->fields);
       }
-      $a_vlans = $NetworkPort_Vlan->find("`networkports_id`='".$data['id']."'");
+      $a_vlans = $NetworkPort_Vlan->find(['networkports_id' => $data['id']]);
       foreach ($a_vlans as $a_vlan) {
          $NetworkPort_Vlan->delete($a_vlan);
       }
@@ -4455,18 +4455,22 @@ function do_networkequipment_migration($migration) {
 
             // Get actual IP defined
             $networknames_id = 0;
-            $a_ports = $networkPort->find("`itemtype`='NetworkEquipment'
-                  AND `items_id`='".$data['networkequipments_id']."'
-                  AND `instantiation_type`='NetworkPortAggregate'
-                  AND `name`='management'", "", 1);
+            $a_ports = $networkPort->find(
+                  ['itemtype'           => 'NetworkEquipment',
+                   'items_id'           => $data['networkequipments_id'],
+                   'instantiation_type' => 'NetworkPortAggregate',
+                   'name'               => 'management'],
+                  [], 1);
 
             foreach ($a_ports as $a_port) {
-               $a_networknames = $networkName->find("`itemtype`='NetworkPort'
-                  AND `items_id`='".$a_port['id']."'");
+               $a_networknames = $networkName->find(
+                     ['itemtype' => 'NetworkPort',
+                      'items_id' => $a_port['id']]);
                foreach ($a_networknames as $a_networkname) {
                   $networknames_id = $a_networkname['id'];
-                  $a_ipaddresses = $ipAddress->find("`itemtype`='NetworkName'
-                     AND `items_id`='".$a_networkname['id']."'");
+                  $a_ipaddresses = $ipAddress->find(
+                        ['itemtype' => 'NetworkName',
+                         'items_id' => $a_networkname['id']]);
                   foreach ($a_ipaddresses as $a_ipaddress) {
                      if (isset($oldtableip[$a_ipaddress['name']])) {
                         unset($oldtableip[$a_ipaddress['name']]);
@@ -5098,7 +5102,7 @@ function do_computeroperatingsystem_migration($migration) {
 
    if ($DB->tableExists("glpi_plugin_fusioninventory_computeroperatingsystems")) {
       $ios = new Item_OperatingSystem();
-      $query = "SELECT DISTINCT(fi_computer.id) AS cid, fi_computer.computers_id, fi_cos.*
+      $query = "SELECT DISTINCT(fi_computer.computers_id) AS cid, fi_computer.computers_id, fi_cos.*
          FROM glpi_plugin_fusioninventory_inventorycomputercomputers AS fi_computer
          INNER JOIN glpi_plugin_fusioninventory_computeroperatingsystems AS fi_cos
             ON fi_computer.plugin_fusioninventory_computeroperatingsystems_id = fi_cos.id
@@ -5119,7 +5123,9 @@ function do_computeroperatingsystem_migration($migration) {
          $input = $search + [
             'operatingsystemversions_id'        => $row['operatingsystemversions_id'],
             'operatingsystemservicepacks_id'    => $row['operatingsystemservicepacks_id'],
-            'operatingsystemkernelversions_id'  => $kversions_mapping[$row['id']],
+            'operatingsystemkernelversions_id'  => isset($kversions_mapping[$row['id']])
+                                                      ? $kversions_mapping[$row['id']]
+                                                      : 0,
             'operatingsystemeditions_id'        => $row['plugin_fusioninventory_computeroperatingsystemeditions_id'],
             'is_dynamic'                        => 1,
             'entities_id'                       => $computer->fields['entities_id']

@@ -163,7 +163,7 @@ class PluginFusioninventoryInventoryComputerLib extends PluginFusioninventoryInv
             'operatingsystemversions_id'        => $pfos['operatingsystemversions_id'],
             'operatingsystemservicepacks_id'    => $pfos['operatingsystemservicepacks_id'],
             'operatingsystemeditions_id'        => $pfos['operatingsystemeditions_id'],
-            'license_id'                        => $pfos['licenseid'],
+            'licenseid'                         => $pfos['licenseid'],
             'license_number'                    => $pfos['license_number'],
             'is_dynamic'                        => 1,
             'entities_id'                       => $computer->fields['entities_id']
@@ -536,8 +536,8 @@ class PluginFusioninventoryInventoryComputerLib extends PluginFusioninventoryInv
 
                foreach ($db_harddrives as $keydb => $arraydb) {
                   if ($arrayslower['serial'] == $arraydb['serial']) {
-                     if ($arraydb['capacity'] == 0
-                             AND $arrayslower['capacity'] > 0) {
+                     if ($arrayslower['capacity'] > 0
+                         && $arraydb['capacity'] != $arrayslower['capacity']) {
                         $input = [
                            'id'       => $keydb,
                            'capacity' => $arrayslower['capacity']
@@ -1086,6 +1086,26 @@ class PluginFusioninventoryInventoryComputerLib extends PluginFusioninventoryInv
                   }
                   $input['totalsize'] = $a_computerinventory['computerdisk'][$key]['totalsize'];
                   $input['freesize'] = $a_computerinventory['computerdisk'][$key]['freesize'];
+                  $disk = $a_computerinventory['computerdisk'][$key];
+
+                  // Safecheck until GLPI X
+                  if (defined('Item_Disk::ENCRYPTION_STATUS_YES'))
+                  {
+                     // Encryption status
+                     if ($disk['encryption_status'] == "Yes") {
+                        $input['encryption_status'] = Item_Disk::ENCRYPTION_STATUS_YES;
+                     } else if ($disk['encryption_status'] == "Partially") {
+                        $input['encryption_status'] = Item_Disk::ENCRYPTION_STATUS_PARTIALLY;
+                     } else {
+                        $input['encryption_status'] = Item_Disk::ENCRYPTION_STATUS_NO;
+                     }
+
+                     // Encryption details
+                     $input['encryption_tool'] = $disk['encryption_tool'];
+                     $input['encryption_algorithm'] = $disk['encryption_algorithm'];
+                     $input['encryption_type'] = $disk['encrypt_type'];
+                  }
+
                   $input['_no_history'] = true;
                   $itemDisk->update($input, false);
                   unset($simpleitemdisk[$key]);
@@ -1108,6 +1128,19 @@ class PluginFusioninventoryInventoryComputerLib extends PluginFusioninventoryInv
                   $a_itemdisk['items_id']  = $computers_id;
                   $a_itemdisk['itemtype']  = 'Computer';
                   $a_itemdisk['is_dynamic']    = 1;
+
+                  // Safecheck until GLPI X
+                  if (defined('Item_Disk::ENCRYPTION_STATUS_YES'))
+                  {
+                     //Encryption status
+                     if ($a_itemdisk['encryption_status'] == "Yes") {
+                        $a_itemdisk['encryption_status'] = Item_Disk::ENCRYPTION_STATUS_YES;
+                     } else if ($a_itemdisk['encryption_status'] == "Partially") {
+                        $a_itemdisk['encryption_status'] = Item_Disk::ENCRYPTION_STATUS_PARTIALLY;
+                     } else {
+                        $a_itemdisk['encryption_status'] = Item_Disk::ENCRYPTION_STATUS_NO;
+                     }
+                  }
                   $a_itemdisk['_no_history']   = $no_history;
                   $itemDisk->add($a_itemdisk, [], !$no_history);
                }
@@ -1719,8 +1752,10 @@ class PluginFusioninventoryInventoryComputerLib extends PluginFusioninventoryInv
 
       foreach ($inventory_networkports as $a_networkport) {
          if ($a_networkport['mac'] != '') {
-            $a_networkports = $networkPort->find("`mac`='".$a_networkport['mac']."'
-               AND `itemtype`='PluginFusioninventoryUnmanaged'", "", 1);
+            $a_networkports = $networkPort->find(
+                  ['mac'      => $a_networkport['mac'],
+                   'itemtype' => 'PluginFusioninventoryUnmanaged'],
+                  [], 1);
             if (count($a_networkports) > 0) {
                $input = current($a_networkports);
                $unmanageds_id = $input['items_id'];
@@ -1815,7 +1850,7 @@ class PluginFusioninventoryInventoryComputerLib extends PluginFusioninventoryInv
                                                           'NetworkPortFiberchannel'])) {
 
                      $instance = new $instantiation_type;
-                     $portsinstance = $instance->find("`networkports_id`='".$keydb."'", '', 1);
+                     $portsinstance = $instance->find(['networkports_id' => $keydb], [], 1);
                      if (count($portsinstance) == 1) {
                         $portinstance = current($portsinstance);
                         $input = $portinstance;
@@ -1834,11 +1869,10 @@ class PluginFusioninventoryInventoryComputerLib extends PluginFusioninventoryInv
                      }
                      if (isset($inventory_networkports[$key]['mac'])) {
                         $networkcards = $item_DeviceNetworkCard->find(
-                                "`mac`='".$inventory_networkports[$key]['mac']."' "
-                                . " AND `itemtype`='Computer'"
-                                . " AND `items_id`='".$computers_id."'",
-                                '',
-                                1);
+                                ['mac'      => $inventory_networkports[$key]['mac'],
+                                 'itemtype' => 'Computer',
+                                 'items_id' => $computers_id],
+                                [], 1);
                         if (count($networkcards) == 1) {
                            $networkcard = current($networkcards);
                            $input['items_devicenetworkcards_id'] = $networkcard['id'];
@@ -1854,8 +1888,10 @@ class PluginFusioninventoryInventoryComputerLib extends PluginFusioninventoryInv
                }
 
                // Get networkname
-               $a_networknames_find = current($networkName->find("`items_id`='".$keydb."'
-                                                    AND `itemtype`='NetworkPort'", "", 1));
+               $a_networknames_find = current($networkName->find(
+                     ['items_id' => $keydb,
+                      'itemtype' => 'NetworkPort'],
+                     [], 1));
                if (!isset($a_networknames_find['id'])) {
                   $a_networkport['entities_id'] = $_SESSION["plugin_fusioninventory_entity"];
                   $a_networkport['items_id'] = $computers_id;
@@ -1975,11 +2011,10 @@ class PluginFusioninventoryInventoryComputerLib extends PluginFusioninventoryInv
                      }
                      if (isset($a_networkport['mac'])) {
                         $networkcards = $item_DeviceNetworkCard->find(
-                                "`mac`='".$a_networkport['mac']."' "
-                                . " AND `itemtype`='Computer'"
-                                . " AND `items_id`='".$computers_id."'",
-                                '',
-                                1);
+                                ['mac'      => $a_networkport['mac'],
+                                 'itemtype' => 'Computer',
+                                 'items_id' => $computers_id],
+                                [], 1);
                         if (count($networkcards) == 1) {
                            $networkcard = current($networkcards);
                            $input['items_devicenetworkcards_id'] = $networkcard['id'];

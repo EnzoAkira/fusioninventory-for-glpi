@@ -593,7 +593,7 @@ class PluginFusioninventoryAgent extends CommonDBTM {
    function importToken($arrayinventory) {
 
       if (isset($arrayinventory['DEVICEID'])) {
-         $a_agent = $this->find("`device_id`='".$arrayinventory['DEVICEID']."'", "", "1");
+         $a_agent = $this->find(['device_id' => $arrayinventory['DEVICEID']], [], 1);
          if (empty($a_agent)) {
             $a_input = [];
             if (isset($arrayinventory['TOKEN'])) {
@@ -649,7 +649,7 @@ class PluginFusioninventoryAgent extends CommonDBTM {
     */
    function getAgentWithComputerid($computers_id) {
 
-      $agent = $this->find("`computers_id`='".$computers_id."'", "", 1);
+      $agent = $this->find(['computers_id' => $computers_id], [], 1);
       if (count($agent) == 1) {
          $data = current($agent);
          $this->getFromDB($data['id']);
@@ -670,8 +670,7 @@ class PluginFusioninventoryAgent extends CommonDBTM {
       if (count($computer_ids) == 0) {
          return [];
       }
-      $agents = $this->find(
-              "`computers_id` in ('".implode("','", $computer_ids)."')");
+      $agents = $this->find(['computers_id' => $computer_ids]);
       return $agents;
    }
 
@@ -704,7 +703,7 @@ class PluginFusioninventoryAgent extends CommonDBTM {
     */
    function setAgentWithComputerid($computers_id, $device_id, $entities_id) {
 
-      $a_agent = $this->find("`computers_id`='".$computers_id."'", "", 1);
+      $a_agent = $this->find(['computers_id' => $computers_id], [], 1);
       // Is this computer already linked to an agent?
       $agent = array_shift($a_agent);
       if (is_array($agent)) {
@@ -728,7 +727,7 @@ class PluginFusioninventoryAgent extends CommonDBTM {
          //         }
          $oldAgents = $this->find(
             // the same device_id but linked on the wrong computer
-            "(`device_id`='".$device_id."' AND `computers_id`<>'".$computers_id."')");
+            ['device_id' => $device_id, 'computers_id' => ['!=', $computers_id]]);
          foreach ($oldAgents as $oldAgent) {
             $input = [];
             $input['id']            = $agent['id'];
@@ -790,12 +789,13 @@ class PluginFusioninventoryAgent extends CommonDBTM {
       echo "</td>";
       echo "<td>";
 
-      $load_anim   = '<i class="fa fa-spinner fa-spin fa-fw"></i>';
+      $load_anim   = '<i class="fas fa-sync fa-spin fa-fw"></i>';
 
       echo Html::scriptBlock("$(function() {
          var waiting = false;
 
-         var refresh_status = function(display_refresh = true) {
+         var refresh_status = function(display_refresh) {
+            var display_refresh = (typeof display_refresh !== 'undefined') ? display_refresh : true;
             $('#agent_status').html('$load_anim');
             $('#refresh_status').hide();
             $('#force_inventory_button').hide();
@@ -854,7 +854,7 @@ class PluginFusioninventoryAgent extends CommonDBTM {
       echo "<span id='agent_status'>".
            __("not yet requested, refresh?", 'fusioninventory').
            "</span>";
-      echo "<span id='refresh_status'><i class='fa fa-refresh'></i></span>";
+      echo "<span id='refresh_status'><i class='fas fa-sync'></i></span>";
       echo "</td>";
 
       echo "<td colspan='2'>";
