@@ -330,7 +330,7 @@ class PluginFusioninventoryInventoryComputerLib extends PluginFusioninventoryInv
                'SELECT'    => [
                   'glpi_items_deviceprocessors.id',
                   'glpi_items_deviceprocessors.nbcores',
-                  'glpi_items_deviceprocessors.nbthreadss',
+                  'glpi_items_deviceprocessors.nbthreads',
                   'designation',
                   'nbcores_default',
                   'nbthreads_default',
