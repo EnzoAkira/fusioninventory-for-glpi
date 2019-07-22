@@ -53,7 +53,7 @@ $PF_CONFIG = [];
 // used to know if computer inventory is in reallity a ESX task
 $PF_ESXINVENTORY = false;
 define ("PLUGIN_FUSIONINVENTORY_XML", '');
-define ("PLUGIN_FUSIONINVENTORY_OFFICIAL_RELEASE", "0");
+define ("PLUGIN_FUSIONINVENTORY_OFFICIAL_RELEASE", "1");
 define ("PLUGIN_FUSIONINVENTORY_REALVERSION", PLUGIN_FUSIONINVENTORY_VERSION . " SNAPSHOT");
 define("PLUGIN_FUSIONINVENTORY_REPOSITORY_DIR",
        GLPI_PLUGIN_DOC_DIR."/fusioninventory/files/repository/");
